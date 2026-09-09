@@ -1,4 +1,10 @@
+import { Link } from "react-router-dom";
+
 const Home = () => {
+
+
+
+
   const categories = [
     ["Music", "128 Events", "♪", "bg-violet-600"],
     ["Workshops", "96 Events", "◇", "bg-orange-500"],
@@ -163,8 +169,9 @@ const Home = () => {
               </p>
             </div>
           </div>
-          <button className="rounded-lg bg-[#080711] px-6 py-3 font-semibold text-white hover:bg-black">
-            Become an Organizer →
+          <button  className="rounded-lg bg-[#080711] px-6 py-3 font-semibold text-white hover:bg-black">
+            
+            <Link to={"/create-event"}>Become an Organizer →</Link>
           </button>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { events } from "../Data/Data";
 
 const categoryIcons = {
@@ -194,7 +195,7 @@ const Events = () => {
             <div>
               <div className={`${viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "flex flex-col"} gap-4 px-0 sm:gap-5 lg:px-5`}>
                 {visibleEvents.map((e)=>(
-                  <div key={e.id} className={`${viewMode === "list" ? "flex flex-row" : ""} group overflow-hidden rounded-lg border border-transparent bg-gray-800 shadow-lg transition duration-300 ease-out hover:-translate-y-2 hover:border-violet-500/60 hover:shadow-xl hover:shadow-violet-950/40`}>
+                  <Link to={`/events/${e.id}`} key={e.id} className={`${viewMode === "list" ? "flex flex-row" : ""} group block overflow-hidden rounded-lg border border-transparent bg-gray-800 shadow-lg transition duration-300 ease-out hover:-translate-y-2 hover:border-violet-500/60 hover:shadow-xl hover:shadow-violet-950/40`}>
                     <div className={`relative overflow-hidden ${viewMode === "list" ? "w-32 shrink-0 sm:w-56" : ""}`}>
                       <img src={e.image} alt={e.name} className={`${viewMode === "list" ? "h-full min-h-32" : "h-52 sm:h-48"} w-full object-cover transition duration-500 ease-out group-hover:scale-110`} />
                       <span className="absolute left-3 top-3 max-w-[calc(100%-4rem)] truncate rounded-full bg-violet-600 px-3 py-1 text-sm font-semibold text-white shadow-lg transition duration-300 group-hover:bg-violet-500">
@@ -202,7 +203,10 @@ const Events = () => {
                       </span>
                       <button
                         type="button"
-                        onClick={() => toggleFavorite(e.id)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          toggleFavorite(e.id);
+                        }}
                         aria-label={`${favoriteEvents.includes(e.id) ? "Remove" : "Add"} ${e.name} ${favoriteEvents.includes(e.id) ? "from" : "to"} favorites`}
                         className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-2xl leading-none transition duration-300 hover:scale-110 hover:bg-black/75 ${favoriteEvents.includes(e.id) ? "text-pink-500" : "text-white"}`}
                       >
@@ -213,12 +217,16 @@ const Events = () => {
                       <h2 className="text-base font-bold text-white transition-colors group-hover:text-violet-300 sm:text-xl">{e.name}</h2>
                       <p className="text-gray-400">{e.location}</p>
                       <p className="text-gray-400">{e.date}</p>
-                      <div className="flex justify-between items-center mt-4">
+                      <div className="mt-4 flex items-center justify-between">
                         <span> Tickets Left: {e.availableTickets}</span>
                         <p className="text-blue-500 font-bold">₹{e.price}</p>
                       </div>
+                      <div className="mt-4 flex items-center justify-between">
+                        <span className="text-sm text-violet-300">View details</span>
+                        <span className="text-lg text-white">→</span>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
 

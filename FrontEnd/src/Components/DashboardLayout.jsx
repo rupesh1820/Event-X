@@ -25,12 +25,21 @@ const organizerLinks = [
   ["Settings", "/profile", "⚙"],
 ];
 
-const DashboardLayout = ({ children, organizer = false, title = "EventX" }) => {
+const DashboardLayout = ({ children, organizer = false, admin = false, title = "EventX" }) => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("eventxUser") || "null");
   const name = user?.fullName || user?.name || "Rupesh Raz";
   const email = user?.emailAddress || "rupeshraz@email.com";
-  const links = organizer ? organizerLinks : userLinks;
+  const links = admin ? [
+    ["Overview", "/admin", "⌘"],
+    ["Users", "/admin/users", "◉"],
+    ["Creators", "/creator", "✦"],
+    ["Events", "/events", "□"],
+    ["Analytics", "/profile/analytics", "⌁"],
+    ["Reports", "/admin/reports", "▣"],
+    ["Notifications", "/notifications", "♧"],
+    ["Settings", "/profile", "⚙"],
+  ] : organizer ? organizerLinks : userLinks;
 
   const logout = () => {
     localStorage.removeItem("eventxUser");
@@ -52,7 +61,7 @@ const DashboardLayout = ({ children, organizer = false, title = "EventX" }) => {
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{name}</p>
               <p className="truncate text-xs text-gray-500">
-                {organizer ? "Organizer" : email}
+                {admin ? "Admin" : organizer ? "Creator" : email}
               </p>
             </div>
           </div>
@@ -106,7 +115,7 @@ const DashboardLayout = ({ children, organizer = false, title = "EventX" }) => {
             </NavLink>
             <h1 className="hidden text-lg font-semibold sm:block">{title}</h1>
           </div>
-          <div className="hidden w-full max-w-xl items-center gap-3 rounded-lg border border-white/10 bg-white/[.03] px-3 py-2 text-sm text-gray-500 md:flex">
+          <div className="hidden w-full max-w-xl items-center gap-3 rounded-lg border border-white/10 bg-white/3 px-3 py-2 text-sm text-gray-500 md:flex">
             ⌕ <span>Search events, attendees, tickets...</span>
           </div>
           <div className="flex items-center gap-4 text-gray-400">
@@ -120,6 +129,24 @@ const DashboardLayout = ({ children, organizer = false, title = "EventX" }) => {
             </NavLink>
           </div>
         </header>
+
+        <nav className="border-b border-white/10 bg-[#0b0e17] lg:hidden">
+          <div className="flex gap-2 overflow-x-auto px-3 py-3 no-scrollbar">
+            {links.map(([label, path, icon]) => (
+              <NavLink
+                key={label}
+                to={path}
+                className={({ isActive }) =>
+                  `flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs transition ${isActive ? 'border-violet-500 bg-violet-600 text-white' : 'border-white/10 bg-white/2 text-gray-300 hover:border-violet-500/50 hover:text-white'}`
+                }
+              >
+                <span>{icon}</span>
+                {label}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+
         <main className="p-4 sm:p-6">{children}</main>
       </div>
     </div>

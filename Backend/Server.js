@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import {connectDB} from './Config/db.js'
 import authRouter from './Routes/AuthRoutes.js'
+import eventRouter from './Routes/EventRouter.js'
 dotenv.config()
 const app = express()
 const port = process.env.PORT || 5000
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }))
 
 
 app.use('/api/auth', authRouter)
+app.use('/api', eventRouter)
 
 app.get('/', (req, res)=>{
   res.send('Server is running')
