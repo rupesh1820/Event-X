@@ -1,10 +1,18 @@
-import 'dotenv/config'
-import { v2 as cloudinary } from 'cloudinary'
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary-v2";
 
 cloudinary.config({
-	cloud_name: process.env.CLOUDINARY_NAME,
-	api_key: process.env.CLOUDINARY_API,
-	api_secret: process.env.CLOUDINARY_SECRET,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export default cloudinary;
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "eventx",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  },
+});
+
+export { cloudinary, storage };
