@@ -4,6 +4,9 @@ import dotenv from 'dotenv'
 import {connectDB} from './Config/db.js'
 import authRouter from './Routes/AuthRoutes.js'
 import eventRouter from './Routes/EventRouter.js'
+import roleRouter from './Routes/RoleRoutes.js'
+import { requireAuth } from './Middleware/auth.js'
+import { bookingUp, cancelBooking, getBookings } from './Controllers/AuthContro.js'
 dotenv.config()
 const app = express()
 const port = process.env.PORT || 5000
@@ -15,6 +18,10 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use('/api/auth', authRouter)
 app.use('/api', eventRouter)
+app.use('/api', roleRouter)
+app.post('/api/book', requireAuth, bookingUp)
+app.get('/api/book', getBookings)
+app.patch('/api/book/:id', requireAuth, cancelBooking)
 
 app.get('/', (req, res)=>{
   res.send('Server is running')

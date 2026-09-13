@@ -62,6 +62,9 @@ import EventCreate from "../Models/CreateEvents.js";
     tags,
     refundPolicy,
     live,
+    creatorId: req.user?.userId || null,
+    approvalStatus: req.user?.role === "creator" ? "pending" : "approved",
+    approvedBy: req.user?.role === "admin" ? req.user.userId : null,
   })
 
   await event.save();
@@ -73,4 +76,29 @@ import EventCreate from "../Models/CreateEvents.js";
   }
 
 };
+
+export const GetallEvent=async(req, res)=>{
+
+  try {
+    const events= await EventCreate.find({
+      $or: [{ approvalStatus: "approved" }, { approvalStatus: { $exists: false } }],
+    })
+    return res.status(200).json({message:"events founded", events})
+    
+  } catch (error) {
+   return res.status(500).json({messsage: error.message})
+  }
+}
+
+export const GetEventById= async(req, res)=>{
+  try {
+    const event= await EventCreate.findById(req.params.id)
+    if(!event){
+      return res.status(501).json({message: "events not found"})
+    }
+    return res.status(201).json({message:" event get successfully", event})
+  } catch (error) {
+    return res.status(401).json({message: "events not found", error})
+  }
+}
 

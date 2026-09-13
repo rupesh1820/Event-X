@@ -32,13 +32,13 @@ const DashboardLayout = ({ children, organizer = false, admin = false, title = "
   const email = user?.emailAddress || "rupeshraz@email.com";
   const links = admin ? [
     ["Overview", "/admin", "⌘"],
-    ["Users", "/admin/users", "◉"],
-    ["Creators", "/creator", "✦"],
-    ["Events", "/events", "□"],
-    ["Analytics", "/profile/analytics", "⌁"],
-    ["Reports", "/admin/reports", "▣"],
-    ["Notifications", "/notifications", "♧"],
-    ["Settings", "/profile", "⚙"],
+    ["Users", "/admin#users", "◉"],
+    ["Creators", "/admin#users", "✦"],
+    ["Events", "/admin?section=events", "□"],
+    ["Analytics", "/admin?section=analytics", "⌁"],
+    ["Reports", "/admin#reports", "▣"],
+    ["Notifications", "/admin?section=inquiries", "♧"],
+    ["Settings", "/admin?section=settings", "⚙"],
   ] : organizer ? organizerLinks : userLinks;
 
   const logout = () => {

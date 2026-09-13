@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import {useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
 const Navbar = () => {
@@ -10,6 +10,19 @@ const Navbar = () => {
       return null
     }
   })
+
+  useEffect(() => {
+  const updateUser = () => {
+    const savedUser = localStorage.getItem("eventxUser")
+    setUser(savedUser ? JSON.parse(savedUser) : null)
+  }
+
+  window.addEventListener("authChanged", updateUser)
+
+  return () => {
+    window.removeEventListener("authChanged", updateUser)
+  }
+}, [])
 
   const navLinkClass = ({ isActive }) =>
     `no-underline transition-colors ${isActive ? 'text-violet-400 underline underline-offset-8 decoration-2' : 'text-white hover:text-violet-400'}`

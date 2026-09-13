@@ -98,6 +98,9 @@ const CreateEvent = () => {
       }
 
       const response = await axios.post(`${API_URL}/api/event-create`, payload, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("eventxToken") || ""}`,
+        },
         timeout: 60000,
         onUploadProgress: (event) => {
           if (event.total) {

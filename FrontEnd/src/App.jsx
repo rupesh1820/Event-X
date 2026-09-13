@@ -23,10 +23,14 @@ import Notifications from './Pages/Notifications';
 import PaymentMethods from './Pages/PaymentMethods';
 import AdminDashboard from './Pages/AdminDashboard';
 import CreatorDashboard from './Pages/CreatorDashboard';
+import TicketBooking from './Pages/TicketBooking';
+import BookingSuccess from './Pages/BookingSuccesPage';
+import Payment from './Pages/PaymentPage';
+import RouteGuard from './Components/RouteGuard';
 
 function App() {
   const location = useLocation();
-  const dashboardPaths = ['/dashboard', '/tickets', '/organizer', '/analytics', '/create-event', '/profile', '/profile/create-event'];
+  const dashboardPaths = ['/dashboard', '/tickets', '/organizer', '/analytics', '/create-event', '/profile', '/profile/create-event', '/creator', '/admin'];
   const isauth = location.pathname === "/login" || location.pathname === "/signup";
   const isDashboard = dashboardPaths.some((path) => 
     location.pathname === path || location.pathname.startsWith(`${path}/`)
@@ -45,22 +49,26 @@ function App() {
       <Route path='/categories' element={<Category/>}></Route>
       <Route path='/about' element={<AboutUs/>}></Route>
       <Route path='/contact' element={<Contact/>}></Route>
-      <Route path='/profile' element={<Profile/>}></Route>
-      <Route path='/profile/dashboard' element={<Dashboard/>}></Route>
-      <Route path='/profile/tickets' element={<Tickets/>}></Route>
-      <Route path='/profile/organizer' element={<OrganizerDashboard/>}></Route>
-      <Route path='/profile/analytics' element={<Analytics/>}></Route>
-      <Route path='/profile/create-event' element={<CreateEvent/>}></Route>
-      <Route path='/create-event' element={<CreateEvent/>}></Route>
+      <Route path='/profile' element={<RouteGuard><Profile/></RouteGuard>}></Route>
+      <Route path='/profile/dashboard' element={<RouteGuard><Dashboard/></RouteGuard>}></Route>
+      <Route path='/profile/tickets' element={<RouteGuard><Tickets/></RouteGuard>}></Route>
+      <Route path='/profile/organizer' element={<RouteGuard roles={['creator','admin']}><OrganizerDashboard/></RouteGuard>}></Route>
+      <Route path='/profile/analytics' element={<RouteGuard roles={['creator','admin']}><Analytics/></RouteGuard>}></Route>
+      <Route path='/profile/create-event' element={<RouteGuard roles={['creator','admin']}><CreateEvent/></RouteGuard>}></Route>
+      <Route path='/create-event' element={<RouteGuard roles={['creator','admin']}><CreateEvent/></RouteGuard>}></Route>
 
-      <Route path='/admin' element={<AdminDashboard />}></Route>
-      <Route path='/creator' element={<CreatorDashboard />}></Route>
-      <Route path='/registrations' element={<MyRegistrations />}></Route>
-      <Route path='/wishlist' element={<Wishlist />}></Route>
-      <Route path='/saved-events' element={<SavedEvents />}></Route>
-      <Route path='/orders' element={<MyOrders />}></Route>
-      <Route path='/notifications' element={<Notifications />}></Route>
-      <Route path='/payments' element={<PaymentMethods />}></Route>
+      <Route path='/admin' element={<RouteGuard roles={['admin']}><AdminDashboard /></RouteGuard>}></Route>
+      <Route path='/creator' element={<RouteGuard roles={['creator','admin']}><CreatorDashboard /></RouteGuard>}></Route>
+      <Route path='/registrations' element={<RouteGuard><MyRegistrations /></RouteGuard>}></Route>
+      <Route path='/wishlist' element={<RouteGuard><Wishlist /></RouteGuard>}></Route>
+      <Route path='/saved-events' element={<RouteGuard><SavedEvents /></RouteGuard>}></Route>
+      <Route path='/orders' element={<RouteGuard><MyOrders /></RouteGuard>}></Route>
+      <Route path='/notifications' element={<RouteGuard><Notifications /></RouteGuard>}></Route>
+      <Route path='/payments' element={<RouteGuard><PaymentMethods /></RouteGuard>}></Route>
+      <Route path="/booking/:id" element={<RouteGuard><TicketBooking /></RouteGuard>} />
+      <Route path="/payment/:id" element={<RouteGuard><Payment /></RouteGuard>} />
+      <Route path="/booking-success" element={<RouteGuard><BookingSuccess /></RouteGuard>} />
+
         
       </Routes>
 

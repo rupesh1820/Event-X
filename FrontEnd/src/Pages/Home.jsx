@@ -169,10 +169,12 @@ const Home = () => {
               </p>
             </div>
           </div>
-          <button  className="rounded-lg bg-[#080711] px-6 py-3 font-semibold text-white hover:bg-black">
-            
-            <Link to={"/create-event"}>Become an Organizer →</Link>
-          </button>
+          <Link
+            to="/signup?role=creator"
+            className="rounded-lg bg-[#080711] px-6 py-3 font-semibold text-white hover:bg-black"
+          >
+            Become an Organizer →
+          </Link>
         </div>
       </section>
     </main>

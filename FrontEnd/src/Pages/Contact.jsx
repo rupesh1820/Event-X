@@ -1,12 +1,29 @@
+import axios from "axios";
 import { useState } from "react";
+
+const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001";
 
 const Contact = () => {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setSent(true);
-    event.currentTarget.reset();
+    setSending(true);
+    setError("");
+    const form = event.currentTarget;
+    const payload = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      await axios.post(`${API_URL}/api/inquiries`, payload);
+      setSent(true);
+      form.reset();
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to send message");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -88,13 +105,14 @@ const Contact = () => {
             type="submit"
             className="mt-5 w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-semibold hover:bg-violet-500"
           >
-            Send Message →
+            {sending ? "Sending..." : "Send Message →"}
           </button>
           {sent && (
             <p className="mt-3 text-center text-sm text-emerald-400">
               Thanks! Your message has been sent.
             </p>
           )}
+          {error && <p className="mt-3 text-center text-sm text-red-300">{error}</p>}
         </form>
         <div className="rounded-xl border border-white/10 bg-[#0d0e18] p-5 sm:p-7">
           <h2 className="text-xl font-semibold">Other Ways to Reach Us</h2>

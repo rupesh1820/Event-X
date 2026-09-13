@@ -24,6 +24,9 @@ import mongoose from 'mongoose'
   tags:{type:String},
   refundPolicy:{type:String},
   live:{type:Boolean, default:false}
+  ,creatorId:{type:String, default:null}
+  ,approvalStatus:{type:String, enum:["pending","approved","rejected"], default:"approved"}
+  ,approvedBy:{type:String, default:null}
 
 },{timestamps:true})
 

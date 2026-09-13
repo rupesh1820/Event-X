@@ -1,135 +1,62 @@
+import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../Components/DashboardLayout";
 
-const Analytics = () => (
-  <DashboardLayout organizer title="Event Analytics">
-    <div className="mx-auto max-w-7xl space-y-5">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-        <div>
-          <h2 className="text-2xl font-bold sm:text-3xl">Event Analytics</h2>
-          <p className="mt-1 text-sm text-gray-400">
-            Track performance and gain insights about your events.
-          </p>
-        </div>
-        <button className="rounded-lg border border-violet-500/40 px-4 py-2 text-sm text-violet-300">
-          ↓ Export Report
-        </button>
+const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001";
+const authConfig = () => ({
+  headers: { Authorization: `Bearer ${localStorage.getItem("eventxToken") || ""}` },
+});
+
+const Analytics = () => {
+  const [data, setData] = useState({ events: [], bookings: [], stats: {} });
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    axios.get(`${API_URL}/api/creator/overview`, authConfig())
+      .then((response) => setData(response.data))
+      .catch((error) => setMessage(error.response?.data?.message || "Unable to load analytics"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const confirmedBookings = data.bookings.filter((booking) => booking.status === "confirmed" || booking.status === "completed");
+  const eventPerformance = useMemo(() => data.events.map((event) => {
+    const eventBookings = confirmedBookings.filter((booking) => String(booking.eventId) === String(event._id));
+    return {
+      ...event,
+      tickets: eventBookings.reduce((sum, booking) => sum + Number(booking.quantity || 0), 0),
+      revenue: eventBookings.reduce((sum, booking) => sum + Number(booking.total || 0), 0),
+    };
+  }).sort((first, second) => second.revenue - first.revenue), [data.events, confirmedBookings]);
+  const maxRevenue = Math.max(...eventPerformance.map((event) => event.revenue), 1);
+  const stats = data.stats || {};
+
+  const exportReport = () => {
+    const report = [
+      "EVENTX CREATOR ANALYTICS",
+      `Revenue: Rs. ${stats.revenue || 0}`,
+      `Tickets sold: ${stats.ticketsSold || 0}`,
+      `Attendees: ${stats.attendees || 0}`,
+      ...eventPerformance.map((event) => `${event.title}: ${event.tickets} tickets, Rs. ${event.revenue}`),
+    ].join("\n");
+    const url = URL.createObjectURL(new Blob([report], { type: "text/plain" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "eventx-creator-analytics.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <DashboardLayout organizer title="Event Analytics">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><h2 className="text-2xl font-bold sm:text-3xl">Event Analytics</h2><p className="mt-1 text-sm text-gray-400">Real performance from your event bookings.</p></div><button type="button" onClick={exportReport} disabled={!eventPerformance.length} className="rounded-lg border border-violet-500/40 px-4 py-2 text-sm text-violet-300 disabled:opacity-40">↓ Export Report</button></div>
+        {message && <p className="text-sm text-red-300">{message}</p>}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[["Total Revenue", `₹${Number(stats.revenue || 0).toLocaleString("en-IN")}`], ["Tickets Sold", stats.ticketsSold || 0], ["Total Attendees", stats.attendees || 0], ["Events", stats.events || 0]].map(([label, value]) => <div key={label} className="rounded-xl border border-white/10 bg-[#10131d] p-4"><p className="text-xs text-gray-400">{label}</p><p className="mt-2 text-xl font-bold">{value}</p></div>)}</div>
+        <section className="rounded-xl border border-white/10 bg-[#10131d] p-5"><h3 className="font-semibold">Event Performance</h3>{loading ? <p className="mt-5 text-sm text-gray-500">Loading analytics...</p> : eventPerformance.length ? <div className="mt-5 space-y-4">{eventPerformance.map((event) => <div key={event._id}><div className="flex justify-between gap-3 text-sm"><span className="truncate">{event.title}</span><span className="text-violet-300">₹{event.revenue} · {event.tickets} tickets</span></div><div className="mt-2 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.max((event.revenue / maxRevenue) * 100, event.revenue ? 4 : 0)}%` }} /></div></div>)}</div> : <p className="mt-5 text-sm text-gray-500">No event analytics yet.</p>}</section>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {[
-          ["Total Revenue", "₹2,45,680"],
-          ["Tickets Sold", "1,246"],
-          ["Total Attendees", "1,062"],
-          ["Event Views", "8,754"],
-          ["Conversion Rate", "14.25%"],
-        ].map(([label, value]) => (
-          <div
-            key={label}
-            className="rounded-xl border border-white/10 bg-[#10131d] p-4"
-          >
-            <p className="text-xs text-gray-400">{label}</p>
-            <p className="mt-2 text-xl font-bold">{value}</p>
-            <p className="mt-1 text-xs text-green-400">↑ 18.6%</p>
-          </div>
-        ))}
-      </div>
-      <div className="grid gap-5 xl:grid-cols-[1.3fr_.7fr]">
-        <section className="rounded-xl border border-white/10 bg-[#10131d] p-5">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Revenue Overview</h3>
-            <span className="text-xs text-gray-500">Last 7 Days⌄</span>
-          </div>
-          <div className="mt-8 flex h-64 items-end gap-3 border-b border-white/10 px-2">
-            {[35, 62, 45, 72, 43, 56, 90].map((height, index) => (
-              <div
-                key={index}
-                className="group flex flex-1 flex-col justify-end"
-              >
-                <div
-                  className="h-2 rounded-t bg-violet-500"
-                  style={{ height: `${height}%` }}
-                />
-                <span className="mt-2 text-center text-[10px] text-gray-600">
-                  {20 + index} May
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section className="rounded-xl border border-white/10 bg-[#10131d] p-5">
-          <h3 className="font-semibold">Traffic Source</h3>
-          <div
-            className="mx-auto mt-8 grid h-44 w-44 place-items-center rounded-full"
-            style={{
-              background:
-                "conic-gradient(#7c3aed 0 37%, #2563eb 37% 66%, #22c55e 66% 88%, #f59e0b 88% 100%)",
-            }}
-          >
-            <div className="grid h-28 w-28 place-items-center rounded-full bg-[#10131d] text-center">
-              <b className="text-xl">8,754</b>
-              <span className="text-[10px] text-gray-500">Total Views</span>
-            </div>
-          </div>
-          <div className="mt-5 space-y-2 text-xs text-gray-400">
-            {[
-              ["Direct", "3,248"],
-              ["Social Media", "2,541"],
-              ["Search Engines", "1,862"],
-              ["Email Campaigns", "658"],
-            ].map(([source, count]) => (
-              <div key={source} className="flex justify-between">
-                <span>● {source}</span>
-                <span>{count}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-      <div className="grid gap-5 lg:grid-cols-3">
-        <section className="rounded-xl border border-white/10 bg-[#10131d] p-5 lg:col-span-2">
-          <h3 className="mb-4 font-semibold">Top Performing Events</h3>
-          {[
-            "Summer Music Festival",
-            "UI/UX Design Workshop",
-            "Inter College Football Cup",
-          ].map((event, index) => (
-            <div
-              key={event}
-              className="flex items-center justify-between border-b border-white/10 py-3 text-sm last:border-0"
-            >
-              <span>{event}</span>
-              <span className="text-violet-400">
-                {["₹1,72,400", "₹20,332", "₹18,560"][index]}
-              </span>
-            </div>
-          ))}
-        </section>
-        <section className="rounded-xl border border-white/10 bg-[#10131d] p-5">
-          <h3 className="font-semibold">Audience Demographics</h3>
-          <div className="mt-6 space-y-4 text-xs text-gray-400">
-            {[
-              ["18 - 24", "28%"],
-              ["25 - 34", "42%"],
-              ["35 - 44", "18%"],
-              ["45 - 54", "8%"],
-            ].map(([age, value]) => (
-              <div key={age}>
-                <div className="mb-1 flex justify-between">
-                  <span>{age}</span>
-                  <span>{value}</span>
-                </div>
-                <div className="h-2 rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-violet-500"
-                    style={{ width: value }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </div>
-  </DashboardLayout>
-);
+    </DashboardLayout>
+  );
+};
 
 export default Analytics;

@@ -26,7 +26,13 @@ const Login = () => {
 
       localStorage.setItem("eventxToken", response.data.token)
       localStorage.setItem("eventxUser", JSON.stringify(response.data.user))
-      navigate("/")
+       const destination = "/" 
+      // response.data.user?.role === "admin"
+      //   ? "/admin"
+      //   : response.data.user?.role === "creator"
+      //     ? "/creator"
+      //     : "/profile/dashboard"
+      navigate(destination)
     } catch (error) {
       setMessage(error.response?.data?.message || "Unable to sign in")
     } finally {
@@ -66,8 +72,8 @@ const Login = () => {
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-200">Email address</label>
-              <input id="email" type="email" placeholder="you@example.com" value={emailAddress} onChange={(event) => setEmailAddress(event.target.value)} className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-gray-500  focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-200">Email or admin username</label>
+              <input id="email" type="text" autoComplete="username" placeholder="you@example.com or admin1820" value={emailAddress} onChange={(event) => setEmailAddress(event.target.value)} className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-gray-500  focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
             </div>
             <div>
               <div className="mb-2 flex items-center justify-between">

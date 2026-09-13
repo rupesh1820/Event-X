@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { events } from "../Data/Data";
 
+import { useEffect } from "react";
+import axios from "axios"
 const categoryIcons = {
   Music: "🎵",
   Workshop: "💻",
@@ -11,25 +12,76 @@ const categoryIcons = {
   Technology: "💡",
 };
 
+const readSavedWishlist = () => {
+  try {
+    const savedIds = JSON.parse(
+      localStorage.getItem("eventxWishlist") || "[]",
+    );
+    return Array.isArray(savedIds) ? savedIds.map(String) : [];
+  } catch {
+    return [];
+  }
+};
+
 const Events = () => {
-  const [favoriteEvents, setFavoriteEvents] = useState([]);
+
+const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001"
+
+
+  const [favoriteEvents, setFavoriteEvents] = useState(readSavedWishlist);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState("grid");
+  const [ eve, setEve] = useState([])
   const eventsPerPage = 20;
 
   const toggleFavorite = (eventId) => {
-    setFavoriteEvents((currentFavorites) =>
-      currentFavorites.includes(eventId)
-        ? currentFavorites.filter((id) => id !== eventId)
-        : [...currentFavorites, eventId]
-    );
+    setFavoriteEvents((currentFavorites) => {
+      const normalizedId = String(eventId);
+      const updatedFavorites = currentFavorites.includes(normalizedId)
+        ? currentFavorites.filter((id) => id !== normalizedId)
+        : [...currentFavorites, normalizedId];
+      localStorage.setItem(
+        "eventxWishlist",
+        JSON.stringify(updatedFavorites),
+      );
+      return updatedFavorites;
+    });
   };
 
-  const totalPages = Math.ceil(events.length / eventsPerPage);
-  const visibleEvents = events.slice(
-    (currentPage - 1) * eventsPerPage,
-    currentPage * eventsPerPage
-  );
+  const totalPages = Math.ceil(eve.length / eventsPerPage);
+ 
+
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/events`);
+      console.log("API response:", res.data);
+
+      const eventList = Array.isArray(res.data.events)
+        ? res.data.events
+        : [];
+
+      const formattedEvents = eventList.map((event) => ({
+        id: event._id,
+        name: event.title,
+        category: event.category,
+        image: event.image || event.imageUrl,
+        location: `${event.venueName || ""}, ${event.city || ""}`,
+        date: event.date,
+        availableTickets: event.maxCapacity,
+        price: event.ticketPrice || 0,
+      }));
+      
+
+      setEve(formattedEvents);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      setEve([]);
+    }
+  };
+
+  fetchData();
+}, [API_URL]);
 
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
@@ -155,7 +207,7 @@ const Events = () => {
           <div className="w-full text-white lg:w-[70%]">
             <div className="flex flex-col gap-4 px-1 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-5">
               <div>
-                <h1><span className="text-blue-500">236</span> Events Found</h1>
+                <h1><span className="text-blue-500">{eve.length}</span> Events Found</h1>
               </div>
               <div className="flex flex-wrap items-center gap-3 sm:gap-5">
                <div className="flex min-w-0 items-center gap-2 text-sm sm:text-base"> <h1>sort by:</h1>
@@ -194,7 +246,7 @@ const Events = () => {
             </div>
             <div>
               <div className={`${viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "flex flex-col"} gap-4 px-0 sm:gap-5 lg:px-5`}>
-                {visibleEvents.map((e)=>(
+                {eve.map((e)=>(
                   <Link to={`/events/${e.id}`} key={e.id} className={`${viewMode === "list" ? "flex flex-row" : ""} group block overflow-hidden rounded-lg border border-transparent bg-gray-800 shadow-lg transition duration-300 ease-out hover:-translate-y-2 hover:border-violet-500/60 hover:shadow-xl hover:shadow-violet-950/40`}>
                     <div className={`relative overflow-hidden ${viewMode === "list" ? "w-32 shrink-0 sm:w-56" : ""}`}>
                       <img src={e.image} alt={e.name} className={`${viewMode === "list" ? "h-full min-h-32" : "h-52 sm:h-48"} w-full object-cover transition duration-500 ease-out group-hover:scale-110`} />
@@ -207,10 +259,10 @@ const Events = () => {
                           event.preventDefault();
                           toggleFavorite(e.id);
                         }}
-                        aria-label={`${favoriteEvents.includes(e.id) ? "Remove" : "Add"} ${e.name} ${favoriteEvents.includes(e.id) ? "from" : "to"} favorites`}
-                        className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-2xl leading-none transition duration-300 hover:scale-110 hover:bg-black/75 ${favoriteEvents.includes(e.id) ? "text-pink-500" : "text-white"}`}
+                        aria-label={`${favoriteEvents.includes(String(e.id)) ? "Remove" : "Add"} ${e.name} ${favoriteEvents.includes(String(e.id)) ? "from" : "to"} wishlist`}
+                        className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-2xl leading-none transition duration-300 hover:scale-110 hover:bg-black/75 ${favoriteEvents.includes(String(e.id)) ? "text-pink-500" : "text-white"}`}
                       >
-                        {favoriteEvents.includes(e.id) ? "♥" : "♡"}
+                        {favoriteEvents.includes(String(e.id)) ? "♥" : "♡"}
                       </button>
                     </div>
                     <div className={`${viewMode === "list" ? "min-w-0 flex-1 p-3 sm:p-4" : "p-4"}`}>
