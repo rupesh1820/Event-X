@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-
+//about us
 const AboutUs = () => {
   return (
     <main className="min-h-screen bg-[#080711] text-white">
