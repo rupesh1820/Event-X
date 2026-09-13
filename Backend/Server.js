@@ -10,7 +10,7 @@ import { bookingUp, cancelBooking, getBookings } from './Controllers/AuthContro.
 dotenv.config()
 const app = express()
 const port = process.env.PORT || 5000
-
+//done cors
 app.use(
   cors({
     origin: [
@@ -18,6 +18,7 @@ app.use(
       "http://localhost:5173",
       "http://localhost:3000",
     ],
+
     credentials: true,
   })
 );
