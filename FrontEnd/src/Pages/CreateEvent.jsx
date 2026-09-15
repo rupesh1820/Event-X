@@ -43,7 +43,7 @@ const CreateEvent = () => {
   const [form, setForm] = useState(initialForm);
   const [imageFile, setImageFile] = useState(null);
   
-  const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001";
+  const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
   const progress = useMemo(() => ((currentStep + 1) / steps.length) * 100, [currentStep]);
 
   const handleImageUpload = (event) => {

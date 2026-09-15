@@ -2,8 +2,8 @@ import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../Components/DashboardLayout";
 
-const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001";
-
+// const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001";
+ const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
 const getUserId = () => {
   try {
     const user = JSON.parse(localStorage.getItem("eventxUser") || "null");

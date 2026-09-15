@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import DashboardLayout from "../Components/DashboardLayout";
 
-const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001";
-
+// const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001";
+  const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
 const Profile = () => {
   const user = JSON.parse(localStorage.getItem("eventxUser") || "null");
   const savedPreferences = JSON.parse(

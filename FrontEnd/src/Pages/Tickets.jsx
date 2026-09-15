@@ -25,8 +25,8 @@ const readBookings = () => {
   }
 };
 
-const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001"
-
+// const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001"
+    const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
 const getCurrentUserId = () => {
   try {
     const user = JSON.parse(localStorage.getItem("eventxUser") || "null");
