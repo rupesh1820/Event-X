@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-const API_URL = import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/";
+const API_URL = import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrender.com";
 const CreatorTicket = () => {
   const [bookings, setBookings] = useState([]);
   const [events, setEvents] = useState([]);

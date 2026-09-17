@@ -50,7 +50,7 @@ const CreateEvent = () => {
   const [imageFile, setImageFile] = useState(null);
 
   const API_URL =
-    import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/";
+    import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrender.com";
 
   const progress = useMemo(
     () => ((currentStep + 1) / steps.length) * 100,

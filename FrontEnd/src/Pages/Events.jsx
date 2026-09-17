@@ -42,7 +42,7 @@ return [];
 
 const Events = () => {
 const API_URL = 
-import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/"
+import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrender.com"
 
 
 const [favoriteEvents, setFavoriteEvents] = useState(readSavedWishlist);

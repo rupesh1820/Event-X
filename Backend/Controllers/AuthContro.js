@@ -6,6 +6,8 @@ import mongoose from "mongoose";
 import User from "../Models/Users.js";
 import Booking from "../Models/Bookings.js";
 import EventCreate from "../Models/CreateEvents.js";
+import Otp from "../Models/OTP.js";
+import {sendOtpEmail} from "../Config/mailer.js"
 
 
 
@@ -13,40 +15,155 @@ const JWT_SECRET = process.env.JWT_SECRET || "eventx-development-secret";
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin1820";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin1820";
 const ADMIN_IDD = process.env.ADMIN_ID || "68a123456789012345678901"
-   const Register = async(req, res)=>{
-
+const Register = async (req, res) => {
   try {
-    const { fullName, emailAddress, password, confirmPassword, role } = req.body
-  if(password!==confirmPassword){
-    return res.json({message:"Password not matched"})
-  }
-  if(!fullName || !emailAddress || !password || !confirmPassword ){
-    return res.status(400).json({ message: "All fields are required" })
-  }
-  const existUser = await User.findOne({ emailAddress })
-  if(existUser){
-    return res.status(401).json({message:" this email already in use"})
-  }
-     if(!validator.isEmail(emailAddress)){
-      return res.status(400).json({message:"email is not valid"})
-     }
-  const hashedpass =await bcrypt.hash(password, 10);
+    const {
+      fullName,
+      emailAddress,
+      password,
+      confirmPassword,
+      role,
+    } = req.body;
 
-  const Users= await User.create({
-   fullName,
-   emailAddress,
-   password:hashedpass,
-  role: role === "creator" ? "creator" : "user",
-  })
-  return res.status(201).json({message: "User create succesfully"})
+    const email = emailAddress?.trim().toLowerCase();
+
+    if (!fullName || !email || !password || !confirmPassword) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({
+        message: "Email is not valid",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: "Password not matched",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    const existUser = await User.findOne({
+      emailAddress: email,
+    });
+
+    if (existUser) {
+      return res.status(409).json({
+        message: "This email is already in use",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const otp = crypto.randomInt(100000, 1000000).toString();
+
+    await Otp.deleteMany({ email });
+
+    await Otp.create({
+      email,
+      otp,
+      userData: {
+        fullName: fullName.trim(),
+        emailAddress: email,
+        password: hashedPassword,
+        role: role === "creator" ? "creator" : "user",
+      },
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    });
+
+    await sendOtpEmail(email, otp);
+
+    return res.status(200).json({
+      message: "OTP sent successfully to your email",
+    });
   } catch (error) {
-    return res.status(401).json({error: "User create failed"})
+    console.error("Register OTP error:", error);
+
+    return res.status(500).json({
+      message: "Unable to send OTP",
+    });
   }
-  
 };
 
 export const register = Register;
 
+export const verifyRegisterOtp = async (req, res) => {
+  try {
+    const { emailAddress, otp } = req.body;
+
+    const email = emailAddress?.trim().toLowerCase();
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        message: "Email and OTP are required",
+      });
+    }
+
+    const otpRecord = await Otp.findOne({ email });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        message: "OTP not found. Please request OTP again",
+      });
+    }
+
+    if (otpRecord.expiresAt < new Date()) {
+      await Otp.deleteOne({ _id: otpRecord._id });
+
+      return res.status(400).json({
+        message: "OTP expired. Please register again",
+      });
+    }
+
+    if (otpRecord.otp !== String(otp).trim()) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      emailAddress: email,
+    });
+
+    if (existingUser) {
+      await Otp.deleteOne({ _id: otpRecord._id });
+
+      return res.status(409).json({
+        message: "This email is already registered",
+      });
+    }
+
+    const user = await User.create(otpRecord.userData);
+
+    await Otp.deleteOne({
+      _id: otpRecord._id,
+    });
+
+    return res.status(201).json({
+      message: "User created successfully",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        emailAddress: user.emailAddress,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+
+    return res.status(500).json({
+      message: "Unable to verify OTP",
+    });
+  }
+};
 
 const AdminId = new mongoose.Types.ObjectId();
 export const login = async (req, res) => {

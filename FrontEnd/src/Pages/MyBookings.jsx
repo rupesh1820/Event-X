@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import jsPDF from "jspdf";
 
 const API_URL =
-  import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/";
+  import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrender.com";
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);

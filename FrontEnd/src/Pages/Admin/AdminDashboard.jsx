@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../Components/DashboardLayout";
 
-const API_URL = import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/";
+const API_URL = import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrender.com";
 const authConfig = () => ({
   headers: {
     Authorization: `Bearer ${localStorage.getItem("eventxToken") || ""}`,
