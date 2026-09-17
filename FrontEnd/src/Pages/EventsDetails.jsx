@@ -13,8 +13,8 @@ const categoryIcons = {
 
 const EventsDetails = () => {
   const { id } = useParams();
-  // const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001"
- const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
+   const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com"
+ //const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
   const[loading, setLoading]=useState(true)
   const [eve, setEve] = useState(null)
   useEffect(()=>{

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import DashboardLayout from "../Components/DashboardLayout";
+
 
 const cardColors = {
   Visa: "from-violet-600 to-violet-800",
@@ -86,7 +86,7 @@ const PaymentMethods = () => {
   };
 
   return (
-    <DashboardLayout title="Payment Methods">
+    <div title="Payment Methods">
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <h2 className="text-2xl font-bold sm:text-3xl">Payment Methods</h2>
@@ -193,7 +193,7 @@ const PaymentMethods = () => {
           </button>
         </form>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

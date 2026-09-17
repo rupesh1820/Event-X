@@ -1,10 +1,10 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import DashboardLayout from "../Components/DashboardLayout";
 
-// const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001";
+
  const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
+//  const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
 const readWishlistIds = () => {
   try {
     const savedIds = JSON.parse(
@@ -73,7 +73,7 @@ const Wishlist = () => {
   };
 
   return (
-    <DashboardLayout title="Wishlist">
+    <div title="Wishlist">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
@@ -178,7 +178,7 @@ const Wishlist = () => {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

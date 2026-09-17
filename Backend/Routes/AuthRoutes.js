@@ -1,22 +1,18 @@
 import express from "express";
 import {
 	bookingUp,
-	deleteProfile,
-	getProfile,
+ updateProfile,
 	login,
 	register,
-	updateProfile,
+	
 } from "../Controllers/AuthContro.js";
-
+import {requireAuth} from "../Middleware/auth.js"
 const authRouter = express.Router();
 
 authRouter.post("/register", register);
 authRouter.post("/login", login);
 authRouter.post("/book", bookingUp);
-authRouter.get("/profile/:id", getProfile);
-authRouter.patch("/profile/:id", updateProfile);
-authRouter.delete("/profile/:id", deleteProfile);
-
+authRouter.patch("/profile/edit", requireAuth,updateProfile )
 
 
 export default authRouter;

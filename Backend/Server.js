@@ -1,10 +1,13 @@
+import dotenv from 'dotenv'
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
+import inquiryrouter from "./Routes/inquiry.js"
+import {Rolerouter} from './Routes/RoleRoutes.js'
+import AdminRouter from './Routes/AdminRoute.js'
 import {connectDB} from './Config/db.js'
 import authRouter from './Routes/AuthRoutes.js'
 import eventRouter from './Routes/EventRouter.js'
-import roleRouter from './Routes/RoleRoutes.js'
+// import roleRouter from './Routes/RoleRoutes.js'
 import { requireAuth } from './Middleware/auth.js'
 import { bookingUp, cancelBooking, getBookings } from './Controllers/AuthContro.js'
 dotenv.config()
@@ -28,11 +31,12 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use('/api/auth', authRouter)
 app.use('/api', eventRouter)
-app.use('/api', roleRouter)
+ app.use('/api', Rolerouter)
 app.post('/api/book', requireAuth, bookingUp)
 app.get('/api/book', getBookings)
 app.patch('/api/book/:id', requireAuth, cancelBooking)
-
+app.use("/api/admin", AdminRouter);
+app.use("/api/inquiries", inquiryrouter);
 app.get('/', (req, res)=>{
   res.send('Server is running')
 })

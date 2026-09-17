@@ -7,11 +7,13 @@ import User from "../Models/Users.js";
 import Booking from "../Models/Bookings.js";
 import EventCreate from "../Models/CreateEvents.js";
 
+
+
 const JWT_SECRET = process.env.JWT_SECRET || "eventx-development-secret";
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin1820";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin1820";
-
-export const Register = async(req, res)=>{
+const ADMIN_IDD = process.env.ADMIN_ID || "68a123456789012345678901"
+   const Register = async(req, res)=>{
 
   try {
     const { fullName, emailAddress, password, confirmPassword, role } = req.body
@@ -45,21 +47,39 @@ export const Register = async(req, res)=>{
 
 export const register = Register;
 
+
+const AdminId = new mongoose.Types.ObjectId();
 export const login = async (req, res) => {
   try {
-    const { emailAddress, password } = req.body;
+    const emailAddress = req.body.emailAddress?.trim().toLowerCase();
+    const { password } = req.body;
 
-    if (emailAddress === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    if (!emailAddress || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
+    // Admin login
+    if (
+      emailAddress === ADMIN_USERNAME.toLowerCase() &&
+      password === ADMIN_PASSWORD
+    ) {
       const token = jwt.sign(
-        { userId: "admin", emailAddress: ADMIN_USERNAME, role: "admin" },
+        {
+          userId: AdminId,
+          emailAddress: ADMIN_USERNAME,
+          role: "admin",
+        },
         JWT_SECRET,
-        { expiresIn: "1d" },
+        { expiresIn: "1d" }
       );
+
       return res.status(200).json({
         message: "Admin login successful",
         token,
         user: {
-          id: "admin",
+          id: AdminId,
           fullName: "EventX Administrator",
           emailAddress: ADMIN_USERNAME,
           role: "admin",
@@ -67,22 +87,34 @@ export const login = async (req, res) => {
       });
     }
 
-    if (!emailAddress || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
-
+    // Normal user login
     const user = await User.findOne({ emailAddress });
+
     if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user.password
+    );
+
     if (!passwordMatches) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
     }
+
+    const role = user.role || "user";
 
     const token = jwt.sign(
-      { userId: user._id, emailAddress: user.emailAddress, role: user.role || "user" },
+      {
+        userId: user._id.toString(),
+        emailAddress: user.emailAddress,
+        role,
+      },
       JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -91,80 +123,23 @@ export const login = async (req, res) => {
       message: "Login successful",
       token,
       user: {
-        id: user._id,
+        id: user._id.toString(),
         fullName: user.fullName,
         emailAddress: user.emailAddress,
-        role: user.role || "user",
+        role,
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: "Login failed" });
+    console.error("Login error:", error);
+
+    return res.status(500).json({
+      message: "Login failed",
+    });
   }
 };
 
-const publicUser = (user) => ({
-  id: user._id,
-  fullName: user.fullName,
-  emailAddress: user.emailAddress,
-  number: user.number,
-  username: user.username,
-  bio: user.bio,
-  language: user.language,
-  timezone: user.timezone,
-  role: user.role || "user",
-});
 
-export const getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    return res.status(200).json({ user: publicUser(user) });
-  } catch (error) {
-    return res.status(500).json({ message: "Unable to load profile" });
-  }
-};
 
-export const updateProfile = async (req, res) => {
-  try {
-    const allowedFields = [
-      "fullName",
-      "emailAddress",
-      "bio",
-      "username",
-      "number",
-      "language",
-      "timezone",
-    ];
-    const updates = Object.fromEntries(
-      allowedFields
-        .filter((field) => req.body[field] !== undefined)
-        .map((field) => [field, req.body[field]]),
-    );
-
-    if (updates.emailAddress && !validator.isEmail(updates.emailAddress)) {
-      return res.status(400).json({ message: "Email is not valid" });
-    }
-
-    const user = await User.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    }).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    return res.status(200).json({ message: "Profile updated", user: publicUser(user) });
-  } catch (error) {
-    return res.status(500).json({ message: "Unable to update profile" });
-  }
-};
-
-export const deleteProfile = async (req, res) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    return res.status(200).json({ message: "Account deleted" });
-  } catch (error) {
-    return res.status(500).json({ message: "Unable to delete account" });
-  }
-};
 
 export const bookingUp = async (req, res) => {
   try {
@@ -292,3 +267,102 @@ export const cancelBooking = async (req, res) => {
     return res.status(500).json({ message: "Unable to cancel booking" });
   }
 };
+
+
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "User not authenticated",
+      });
+    }
+
+    const {
+      fullName,
+      username,
+      number,
+      bio,
+      language,
+      timezone,
+    } = req.body;
+
+    const updateData = {};
+
+    if (fullName !== undefined) {
+      updateData.fullName = fullName.trim();
+    }
+
+    if (username !== undefined) {
+      updateData.username = username.trim();
+    }
+
+    if (number !== undefined) {
+      updateData.number = number;
+    }
+
+    if (bio !== undefined) {
+      updateData.bio = bio;
+    }
+
+    if (language !== undefined) {
+      updateData.language = language;
+    }
+
+    if (timezone !== undefined) {
+      updateData.timezone = timezone;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        ...updatedUser.toObject(),
+        id: updatedUser._id,
+      },
+    });
+  } catch (error) {
+    console.error("UPDATE PROFILE ERROR:", error);
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: "Username or email already exists",
+      });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        message: Object.values(error.errors)
+          .map((err) => err.message)
+          .join(", "),
+      });
+    }
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: `Invalid ${error.path}`,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Unable to update profile",
+    });
+  }
+};
+
