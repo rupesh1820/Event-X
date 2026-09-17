@@ -3,7 +3,7 @@ import axios from "axios"
 import { NavLink } from "react-router-dom"
 import { useNavigate } from "react-router-dom"
 
-const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com"
+const API_URL = import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/"
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false)

@@ -94,7 +94,7 @@ const CategoryCard = ({ category }) => (
 
 const Category = () => {
 const API_URL = 
-import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com"
+import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/"
 
 const [events, setEvents] = useState([]);
 const [search, setSearch] = useState("");

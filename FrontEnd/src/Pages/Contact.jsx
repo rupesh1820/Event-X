@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 
-const API_URL = import.meta.env.VITE_SERVER || "https://event-x-backend.onrender.com";
+const API_URL = import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/";
 
 const Contact = () => {
   const [sent, setSent] = useState(false);
