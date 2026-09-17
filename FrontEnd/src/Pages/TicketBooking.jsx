@@ -5,7 +5,7 @@ import axios from "axios";
 const TicketBooking = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001"
+  const API_URL = import.meta.env.VITE_SERVER 
   const [event, setEvent] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);

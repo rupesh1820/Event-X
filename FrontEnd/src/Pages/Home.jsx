@@ -12,7 +12,7 @@ const Home = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   const API_URL =
-    import.meta.env.VITE_SERVER || "http://localhost:5001"
+    import.meta.env.VITE_SERVER
 
   useEffect(() => {
     fetchEvents();

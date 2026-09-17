@@ -94,7 +94,7 @@ const CategoryCard = ({ category }) => (
 
 const Category = () => {
 const API_URL = 
-import.meta.env.VITE_SERVER || "http://localhost:5001"
+import.meta.env.VITE_SERVER 
 
 const [events, setEvents] = useState([]);
 const [search, setSearch] = useState("");

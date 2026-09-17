@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import jsPDF from "jspdf";
 
 const API_URL =
-  import.meta.env.VITE_SERVER || "http://localhost:5001"
+  import.meta.env.VITE_SERVER 
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 
- const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001"
+ const API_URL = import.meta.env.VITE_SERVER 
 const getUserId = () => {
   try {
     const user = JSON.parse(localStorage.getItem("eventxUser") || "null");

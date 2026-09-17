@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const API_URL =
-  import.meta.env.VITE_SERVER || "http://localhost:5001"
+  import.meta.env.VITE_SERVER 
 const CEventBooking = () => {
   const [bookings, setBookings] = useState([]);
   const [events, setEvents] = useState([]);

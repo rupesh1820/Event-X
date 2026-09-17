@@ -50,7 +50,7 @@ const CreateEvent = () => {
   const [imageFile, setImageFile] = useState(null);
 
   const API_URL =
-    import.meta.env.VITE_SERVER || "http://localhost:5001"
+    import.meta.env.VITE_SERVER 
 
   const progress = useMemo(
     () => ((currentStep + 1) / steps.length) * 100,

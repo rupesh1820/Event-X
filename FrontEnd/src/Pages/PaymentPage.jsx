@@ -5,7 +5,7 @@ import axios from "axios";
 const Payment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001"
+  const API_URL = import.meta.env.VITE_SERVER 
 
   const user = JSON.parse(localStorage.getItem("eventxUser") || "null");
 
