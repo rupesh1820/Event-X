@@ -3,9 +3,7 @@ import axios from "axios";
 import { NavLink, useNavigate } from "react-router-dom";
 
 const API_URL =
-  import.meta.env.VITE_SERVER ||
-  "https://eventx-backend-pq2m.onrender.com"
-
+  import.meta.env.VITE_SERVER || "http://localhost:5001";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -70,15 +68,20 @@ const Signup = () => {
       );
 
       setOtpStep(true);
+
       setMessage(
         response.data.message || "OTP sent to your email"
       );
     } catch (error) {
-      console.error("Register error:", error);
+      console.error(
+        "Register error:",
+        error.response?.data || error.message
+      );
 
       setMessage(
-        error.response?.data?.message ||
-          "Unable to send OTP. Please try again."
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Registration failed"
       );
     } finally {
       setIsSubmitting(false);
@@ -103,6 +106,7 @@ const Signup = () => {
           fullName: fullName.trim(),
           emailAddress: emailAddress.trim().toLowerCase(),
           password,
+          confirmPassword,
           role,
           otp,
         }
@@ -110,10 +114,12 @@ const Signup = () => {
 
       const registeredUser = response.data.user;
 
-      localStorage.setItem(
-        "eventxUser",
-        JSON.stringify(registeredUser)
-      );
+      if (registeredUser) {
+        localStorage.setItem(
+          "eventxUser",
+          JSON.stringify(registeredUser)
+        );
+      }
 
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
@@ -131,16 +137,20 @@ const Signup = () => {
       );
 
       navigate("/home");
-    } catch (error) {
-      console.error("OTP verification error:", error);
+    }  catch (error) {
+  console.error(
+    "Register error:",
+    error.response?.data || error.message
+  );
 
-      setMessage(
-        error.response?.data?.message ||
-          "Invalid or expired OTP"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+  setMessage(
+    error.response?.data?.error ||
+      error.response?.data?.message ||
+      "Registration failed"
+  );
+} finally {
+  setIsSubmitting(false);
+}
   };
 
   return (
@@ -272,9 +282,7 @@ const Signup = () => {
 
                   <div className="relative">
                     <input
-                      type={
-                        showPassword ? "text" : "password"
-                      }
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(event) =>
                         setPassword(event.target.value)
@@ -303,9 +311,7 @@ const Signup = () => {
                   <div className="relative">
                     <input
                       type={
-                        showConfirmPassword
-                          ? "text"
-                          : "password"
+                        showConfirmPassword ? "text" : "password"
                       }
                       value={confirmPassword}
                       onChange={(event) =>

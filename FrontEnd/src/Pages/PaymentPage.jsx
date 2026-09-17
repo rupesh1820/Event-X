@@ -5,8 +5,7 @@ import axios from "axios";
 const Payment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrender.com";
-   // const API_URL = import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrender.com";
+  const API_URL = import.meta.env.VITE_SERVER || "http://localhost:5001"
 
   const user = JSON.parse(localStorage.getItem("eventxUser") || "null");
 

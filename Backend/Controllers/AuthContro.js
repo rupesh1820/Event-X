@@ -63,7 +63,9 @@ const Register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const otp = crypto.randomInt(100000, 1000000).toString();
+    const otp = crypto
+      .randomInt(100000, 1000000)
+      .toString();
 
     await Otp.deleteMany({ email });
 
@@ -79,6 +81,9 @@ const Register = async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
+    console.log("OTP generated:", otp);
+    console.log("Sending OTP to:", email);
+
     await sendOtpEmail(email, otp);
 
     return res.status(200).json({
@@ -89,6 +94,7 @@ const Register = async (req, res) => {
 
     return res.status(500).json({
       message: "Unable to send OTP",
+      error: error.message,
     });
   }
 };

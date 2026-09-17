@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 
 const API_URL =
-  import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrender.com";
+  import.meta.env.VITE_SERVER || "https://eventx-backend-pq2m.onrehttp://localhost:5001nder.com/https://eventx-backend-pq2m.onrender.com/https://eventx-backend-pq2m.onrehttp://localhost:5001nder.com/https://eventx-backend-pq2m.onrender.com";
 
 const getUserId = () => {
   try {
