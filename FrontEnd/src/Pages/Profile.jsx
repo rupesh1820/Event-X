@@ -12,7 +12,7 @@ const Profile = () => {
       navigate("/login");
       return;
     }
-
+// done
     setUser(JSON.parse(storedUser));
   }, [navigate]);
 
