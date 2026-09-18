@@ -11,36 +11,38 @@ dotenv.config({
   path: path.resolve(__dirname, "../.env"),
 });
 
-console.log(
-  "EMAIL_USER loaded:",
-  !!process.env.EMAIL_USER
-);
+console.log("EMAIL_USER loaded:", !!process.env.EMAIL_USER);
+console.log("EMAIL_PASS loaded:", !!process.env.EMAIL_PASS);
 
-console.log(
-  "EMAIL_PASS loaded:",
-  !!process.env.EMAIL_PASS
-);
-
-if (
-  !process.env.EMAIL_USER ||
-  !process.env.EMAIL_PASS
-) {
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
   throw new Error(
     "EMAIL_USER ya EMAIL_PASS .env file me missing hai"
   );
 }
 
-// Gmail transporter
+// ========================================
+// Gmail SMTP
+// ========================================
+
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000,
 });
 
+// ========================================
 // Check SMTP connection
+// ========================================
+
 transporter.verify((error, success) => {
   if (error) {
     console.error(
@@ -53,6 +55,10 @@ transporter.verify((error, success) => {
     );
   }
 });
+
+// ========================================
+// Send OTP Email
+// ========================================
 
 export const sendOtpEmail = async (
   email,
@@ -140,24 +146,10 @@ If you did not request this OTP, please ignore this email.
       `,
     });
 
-    console.log(
-      "OTP email sent successfully"
-    );
-
-    console.log(
-      "Message ID:",
-      info.messageId
-    );
-
-    console.log(
-      "Accepted:",
-      info.accepted
-    );
-
-    console.log(
-      "Rejected:",
-      info.rejected
-    );
+    console.log("OTP email sent successfully");
+    console.log("Message ID:", info.messageId);
+    console.log("Accepted:", info.accepted);
+    console.log("Rejected:", info.rejected);
 
     return info;
 
