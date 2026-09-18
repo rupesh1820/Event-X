@@ -3,8 +3,9 @@ import { QRCodeSVG } from "qrcode.react";
 import QRCode from "qrcode";
 import jsPDF from "jspdf";
 
-const API_URL =
-  import.meta.env.VITE_SERVER 
+const API_URL = (
+  import.meta.env.VITE_SERVER || "http://localhost:5001"
+).replace(/\/$/, "");
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -14,14 +15,37 @@ const MyBookings = () => {
   const [downloading, setDownloading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
+  // =========================
+  // GET TOKEN
+  // =========================
   const getToken = () => {
-    return (
+    const token =
       localStorage.getItem("eventxToken") ||
       localStorage.getItem("token") ||
-      localStorage.getItem("authToken")
-    )?.replace(/^Bearer\s+/i, "");
+      localStorage.getItem("authToken");
+
+    if (!token) {
+      return null;
+    }
+
+    return token.replace(/^Bearer\s+/i, "").trim();
   };
 
+  // =========================
+  // CLEAR LOGIN
+  // =========================
+  const logoutUser = () => {
+    localStorage.removeItem("eventxToken");
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+
+    // User information bhi clear kar do
+    localStorage.removeItem("eventxUser");
+  };
+
+  // =========================
+  // FETCH MY BOOKINGS
+  // =========================
   const fetchMyBookings = async () => {
     try {
       setLoading(true);
@@ -30,51 +54,109 @@ const MyBookings = () => {
       const token = getToken();
 
       if (!token) {
-        throw new Error("Please login first");
+        setError("Please login first.");
+
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 800);
+
+        return;
       }
 
-      const response = await fetch(
-        `${API_URL}/api/my-bookings`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/api/my-bookings`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
 
-      const data = await response.json();
+      let data = {};
 
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      // =========================
+      // TOKEN INVALID / EXPIRED
+      // =========================
+      if (response.status === 401) {
+        console.error("401 Unauthorized:", data);
+
+        logoutUser();
+
+        setError("Session expired. Please login again.");
+
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 800);
+
+        return;
+      }
+
+      // =========================
+      // OTHER ERROR
+      // =========================
       if (!response.ok) {
         throw new Error(
           data.message || "Bookings fetch nahi hui"
         );
       }
 
-      setBookings((data.bookings || []).filter((booking) => getStatus(booking) !== "cancelled"));
+      // =========================
+      // BOOKINGS SUCCESS
+      // =========================
+      const fetchedBookings = Array.isArray(data.bookings)
+        ? data.bookings
+        : [];
+
+      setBookings(
+        fetchedBookings.filter(
+          (booking) => getStatus(booking) !== "cancelled"
+        )
+      );
     } catch (err) {
       console.error("Fetch bookings error:", err);
-      setError(err.message || "Something went wrong");
+
+      setError(
+        err.message || "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================
+  // LOAD BOOKINGS
+  // =========================
   useEffect(() => {
     fetchMyBookings();
   }, []);
 
+  // =========================
+  // DATE
+  // =========================
   const formatDate = (date) => {
     if (!date) return "N/A";
 
-    return new Date(date).toLocaleDateString("en-IN", {
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "N/A";
+    }
+
+    return parsedDate.toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
       year: "numeric",
     });
   };
 
+  // =========================
+  // EVENT NAME
+  // =========================
   const getEventName = (booking) =>
     booking?.eventName ||
     booking?.eventTitle ||
@@ -82,6 +164,9 @@ const MyBookings = () => {
     booking?.event?.title ||
     "Event";
 
+  // =========================
+  // EVENT IMAGE
+  // =========================
   const getEventImage = (booking) =>
     booking?.eventImage ||
     booking?.imageUrl ||
@@ -90,18 +175,27 @@ const MyBookings = () => {
     booking?.event?.image ||
     "";
 
+  // =========================
+  // EVENT DATE
+  // =========================
   const getEventDate = (booking) =>
     booking?.eventDate ||
     booking?.date ||
     booking?.event?.date ||
     "";
 
+  // =========================
+  // EVENT TIME
+  // =========================
   const getEventTime = (booking) =>
     booking?.eventTime ||
     booking?.time ||
     booking?.event?.time ||
     "N/A";
 
+  // =========================
+  // EVENT LOCATION
+  // =========================
   const getEventLocation = (booking) =>
     booking?.eventLocation ||
     booking?.location ||
@@ -111,6 +205,9 @@ const MyBookings = () => {
     booking?.event?.location ||
     "N/A";
 
+  // =========================
+  // QUANTITY
+  // =========================
   const getQuantity = (booking) =>
     Number(
       booking?.quantity ||
@@ -119,12 +216,18 @@ const MyBookings = () => {
         1
     );
 
+  // =========================
+  // PAYMENT METHOD
+  // =========================
   const getPaymentMethod = (booking) =>
     booking?.paymentMethod ||
     booking?.paymentType ||
     booking?.payment ||
     "N/A";
 
+  // =========================
+  // TOTAL
+  // =========================
   const getTotalAmount = (booking) =>
     Number(
       booking?.totalAmount ??
@@ -133,50 +236,90 @@ const MyBookings = () => {
         0
     );
 
+  // =========================
+  // USER NAME
+  // =========================
   const getUserName = (booking) =>
     booking?.fullName ||
     booking?.name ||
     booking?.userName ||
     booking?.user?.fullName ||
+    booking?.attendeeName ||
     "N/A";
 
+  // =========================
+  // USER EMAIL
+  // =========================
   const getUserEmail = (booking) =>
     booking?.emailAddress ||
     booking?.email ||
     booking?.user?.emailAddress ||
     booking?.user?.email ||
+    booking?.attendeeEmail ||
     "N/A";
 
+  // =========================
+  // USER MOBILE
+  // =========================
   const getUserMobile = (booking) =>
     booking?.number ||
     booking?.mobile ||
     booking?.phone ||
+    booking?.attendeePhone ||
     "N/A";
 
+  // =========================
+  // BOOKING ID
+  // =========================
   const getBookingId = (booking) =>
-    booking?._id || booking?.bookingId || "N/A";
+    booking?._id ||
+    booking?.bookingId ||
+    booking?.id ||
+    "N/A";
 
+  // =========================
+  // STATUS
+  // =========================
   const getStatus = (booking) =>
-    String(booking?.status || "confirmed").toLowerCase();
+    String(
+      booking?.status || "confirmed"
+    ).toLowerCase();
 
+  // =========================
+  // QR VALUE
+  // =========================
   const getQrValue = (booking) => {
     return JSON.stringify(
       {
         bookingId: getBookingId(booking),
+
         eventId:
           booking?.eventId ||
           booking?.event?._id ||
           "N/A",
+
         eventName: getEventName(booking),
+
         name: getUserName(booking),
+
         email: getUserEmail(booking),
+
         mobile: getUserMobile(booking),
-        date: formatDate(getEventDate(booking)),
+
+        date: formatDate(
+          getEventDate(booking)
+        ),
+
         time: getEventTime(booking),
+
         location: getEventLocation(booking),
+
         quantity: getQuantity(booking),
+
         payment: getPaymentMethod(booking),
+
         totalAmount: getTotalAmount(booking),
+
         status: getStatus(booking),
       },
       null,
@@ -184,16 +327,17 @@ const MyBookings = () => {
     );
   };
 
+  // =========================
+  // CANCEL TICKET
+  // =========================
   const cancelTicket = async (booking) => {
     const bookingId = getBookingId(booking);
 
     if (!bookingId || bookingId === "N/A") {
-      alert("Booking ID nahi mili");
       return;
     }
 
     if (getStatus(booking) === "cancelled") {
-      alert("Ticket already cancelled hai");
       return;
     }
 
@@ -208,94 +352,180 @@ const MyBookings = () => {
 
       const token = getToken();
 
+      if (!token) {
+        logoutUser();
+        window.location.href = "/login";
+        return;
+      }
+
       const response = await fetch(
         `${API_URL}/api/my-bookings/${bookingId}/cancel`,
         {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            Accept: "application/json",
           },
         }
       );
 
-      const data = await response.json();
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      // 401
+      if (response.status === 401) {
+        logoutUser();
+
+        
+
+        window.location.href = "/login";
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Ticket cancel nahi hui"
+          data.message ||
+            "Ticket cancel nahi hui"
         );
       }
 
-      const updatedBooking = {
-        ...booking,
-        status: "cancelled",
-      };
-
-      // Cancelled ticket ko My Bookings list se remove kar do
+      // Remove cancelled ticket
       setBookings((prev) =>
-        prev.filter((item) => getBookingId(item) !== bookingId)
+        prev.filter(
+          (item) =>
+            getBookingId(item) !== bookingId
+        )
       );
 
-      // Ticket modal bhi close ho jayega
+      // Close modal
       setSelectedBooking(null);
 
-      alert(
-        data.message || "Ticket successfully cancelled"
-      );
+      
     } catch (err) {
-      console.error("Cancel ticket error:", err);
-      alert(err.message);
+      console.error(
+        "Cancel ticket error:",
+        err
+      );
+
+      
     } finally {
       setCancelling(false);
     }
   };
 
+  // =========================
+  // GENERATE QR
+  // =========================
   const generateQrDataUrl = async (booking) => {
-    return await QRCode.toDataURL(getQrValue(booking), {
-      errorCorrectionLevel: "H",
-      type: "image/png",
-      width: 700,
-      margin: 4,
-      color: {
-        dark: "#000000",
-        light: "#ffffff",
-      },
-    });
+    return await QRCode.toDataURL(
+      getQrValue(booking),
+      {
+        errorCorrectionLevel: "H",
+        type: "image/png",
+        width: 700,
+        margin: 4,
+        color: {
+          dark: "#000000",
+          light: "#ffffff",
+        },
+      }
+    );
   };
 
-  const addPdfRow = (pdf, label, value, y) => {
-    const pageWidth = pdf.internal.pageSize.getWidth();
+  // =========================
+  // PDF ROW
+  // =========================
+  const addPdfRow = (
+    pdf,
+    label,
+    value,
+    y
+  ) => {
+    const pageWidth =
+      pdf.internal.pageSize.getWidth();
 
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(10);
-    pdf.setTextColor(110, 110, 120);
-    pdf.text(label, 20, y);
-
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.setTextColor(30, 30, 40);
-
-    const wrappedValue = pdf.splitTextToSize(
-      String(value ?? "N/A"),
-      95
+    pdf.setFont(
+      "helvetica",
+      "normal"
     );
 
-    pdf.text(wrappedValue, pageWidth - 20, y, {
-      align: "right",
-    });
+    pdf.setFontSize(10);
 
-    return y + Math.max(8, wrappedValue.length * 5);
+    pdf.setTextColor(
+      110,
+      110,
+      120
+    );
+
+    pdf.text(
+      label,
+      20,
+      y
+    );
+
+    pdf.setFont(
+      "helvetica",
+      "bold"
+    );
+
+    pdf.setFontSize(10);
+
+    pdf.setTextColor(
+      30,
+      30,
+      40
+    );
+
+    const wrappedValue =
+      pdf.splitTextToSize(
+        String(value ?? "N/A"),
+        95
+      );
+
+    pdf.text(
+      wrappedValue,
+      pageWidth - 20,
+      y,
+      {
+        align: "right",
+      }
+    );
+
+    return (
+      y +
+      Math.max(
+        8,
+        wrappedValue.length * 5
+      )
+    );
   };
 
+  // =========================
+  // DOWNLOAD PDF
+  // =========================
   const downloadTicketPDF = async () => {
-    if (!selectedBooking || downloading) return;
+    if (
+      !selectedBooking ||
+      downloading
+    ) {
+      return;
+    }
 
     try {
       setDownloading(true);
 
-      const booking = selectedBooking;
-      const qrDataUrl = await generateQrDataUrl(booking);
+      const booking =
+        selectedBooking;
+
+      const qrDataUrl =
+        await generateQrDataUrl(
+          booking
+        );
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -304,13 +534,32 @@ const MyBookings = () => {
         compress: true,
       });
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      const pageWidth =
+        pdf.internal.pageSize.getWidth();
 
-      pdf.setFillColor(248, 248, 252);
-      pdf.rect(0, 0, pageWidth, pageHeight, "F");
+      const pageHeight =
+        pdf.internal.pageSize.getHeight();
 
-      pdf.setFillColor(91, 33, 182);
+      pdf.setFillColor(
+        248,
+        248,
+        252
+      );
+
+      pdf.rect(
+        0,
+        0,
+        pageWidth,
+        pageHeight,
+        "F"
+      );
+
+      pdf.setFillColor(
+        91,
+        33,
+        182
+      );
+
       pdf.roundedRect(
         12,
         10,
@@ -321,37 +570,93 @@ const MyBookings = () => {
         "F"
       );
 
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(25);
-      pdf.setTextColor(255, 255, 255);
-      pdf.text("EventX", pageWidth / 2, 26, {
-        align: "center",
-      });
-
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
-      pdf.text("Your Event Ticket", pageWidth / 2, 31, {
-        align: "center",
-      });
-
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(18);
-      pdf.setTextColor(25, 25, 35);
-
-      const eventName = getEventName(booking);
-      const eventNameLines = pdf.splitTextToSize(
-        eventName,
-        pageWidth - 40
+      pdf.setFont(
+        "helvetica",
+        "bold"
       );
 
-      pdf.text(eventNameLines, pageWidth / 2, 49, {
-        align: "center",
-      });
+      pdf.setFontSize(25);
 
-      let y = 49 + eventNameLines.length * 8 + 8;
+      pdf.setTextColor(
+        255,
+        255,
+        255
+      );
 
-      pdf.setDrawColor(210, 210, 220);
-      pdf.line(18, y, pageWidth - 18, y);
+      pdf.text(
+        "EventX",
+        pageWidth / 2,
+        26,
+        {
+          align: "center",
+        }
+      );
+
+      pdf.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      pdf.setFontSize(9);
+
+      pdf.text(
+        "Your Event Ticket",
+        pageWidth / 2,
+        31,
+        {
+          align: "center",
+        }
+      );
+
+      pdf.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      pdf.setFontSize(18);
+
+      pdf.setTextColor(
+        25,
+        25,
+        35
+      );
+
+      const eventName =
+        getEventName(booking);
+
+      const eventNameLines =
+        pdf.splitTextToSize(
+          eventName,
+          pageWidth - 40
+        );
+
+      pdf.text(
+        eventNameLines,
+        pageWidth / 2,
+        49,
+        {
+          align: "center",
+        }
+      );
+
+      let y =
+        49 +
+        eventNameLines.length *
+          8 +
+        8;
+
+      pdf.setDrawColor(
+        210,
+        210,
+        220
+      );
+
+      pdf.line(
+        18,
+        y,
+        pageWidth - 18,
+        y
+      );
 
       y += 10;
 
@@ -386,7 +691,9 @@ const MyBookings = () => {
       y = addPdfRow(
         pdf,
         "Date",
-        formatDate(getEventDate(booking)),
+        formatDate(
+          getEventDate(booking)
+        ),
         y
       );
 
@@ -427,7 +734,12 @@ const MyBookings = () => {
 
       y += 3;
 
-      pdf.setFillColor(237, 233, 254);
+      pdf.setFillColor(
+        237,
+        233,
+        254
+      );
+
       pdf.roundedRect(
         16,
         y,
@@ -438,14 +750,31 @@ const MyBookings = () => {
         "F"
       );
 
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont(
+        "helvetica",
+        "bold"
+      );
+
       pdf.setFontSize(12);
-      pdf.setTextColor(91, 33, 182);
-      pdf.text("Total Amount", 23, y + 10);
+
+      pdf.setTextColor(
+        91,
+        33,
+        182
+      );
+
+      pdf.text(
+        "Total Amount",
+        23,
+        y + 10
+      );
 
       pdf.setFontSize(15);
+
       pdf.text(
-        `Rs. ${getTotalAmount(booking)}`,
+        `Rs. ${getTotalAmount(
+          booking
+        )}`,
         pageWidth - 23,
         y + 10,
         {
@@ -455,24 +784,60 @@ const MyBookings = () => {
 
       y += 27;
 
-      pdf.setDrawColor(170, 170, 180);
-      pdf.setLineDashPattern([2, 2], 0);
-      pdf.line(18, y, pageWidth - 18, y);
-      pdf.setLineDashPattern([], 0);
+      pdf.setDrawColor(
+        170,
+        170,
+        180
+      );
+
+      pdf.setLineDashPattern(
+        [2, 2],
+        0
+      );
+
+      pdf.line(
+        18,
+        y,
+        pageWidth - 18,
+        y
+      );
+
+      pdf.setLineDashPattern(
+        [],
+        0
+      );
 
       y += 10;
 
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont(
+        "helvetica",
+        "bold"
+      );
+
       pdf.setFontSize(12);
-      pdf.setTextColor(35, 35, 45);
-      pdf.text("Scan QR Code", pageWidth / 2, y, {
-        align: "center",
-      });
+
+      pdf.setTextColor(
+        35,
+        35,
+        45
+      );
+
+      pdf.text(
+        "Scan QR Code",
+        pageWidth / 2,
+        y,
+        {
+          align: "center",
+        }
+      );
 
       y += 5;
 
       const qrSize = 62;
-      const qrX = (pageWidth - qrSize) / 2;
+
+      const qrX =
+        (pageWidth - qrSize) /
+        2;
 
       pdf.addImage(
         qrDataUrl,
@@ -485,11 +850,21 @@ const MyBookings = () => {
         "FAST"
       );
 
-      y += qrSize + 8;
+      y +=
+        qrSize + 8;
 
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont(
+        "helvetica",
+        "normal"
+      );
+
       pdf.setFontSize(8);
-      pdf.setTextColor(110, 110, 120);
+
+      pdf.setTextColor(
+        110,
+        110,
+        120
+      );
 
       pdf.text(
         "Scan this QR code to view complete booking details",
@@ -503,7 +878,12 @@ const MyBookings = () => {
       y += 12;
 
       pdf.setFontSize(8);
-      pdf.setTextColor(140, 140, 150);
+
+      pdf.setTextColor(
+        140,
+        140,
+        150
+      );
 
       pdf.text(
         "Thank you for booking with EventX",
@@ -514,19 +894,32 @@ const MyBookings = () => {
         }
       );
 
-      const safeName = eventName
-        .replace(/[^a-z0-9]/gi, "_")
-        .toLowerCase();
+      const safeName =
+        eventName
+          .replace(
+            /[^a-z0-9]/gi,
+            "_"
+          )
+          .toLowerCase();
 
-      pdf.save(`${safeName}-ticket.pdf`);
+      pdf.save(
+        `${safeName}-ticket.pdf`
+      );
     } catch (err) {
-      console.error("PDF download error:", err);
-      alert("PDF generate nahi ho paya");
+      console.error(
+        "PDF download error:",
+        err
+      );
+
+      
     } finally {
       setDownloading(false);
     }
   };
 
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#080b14] text-gray-300">
@@ -535,11 +928,16 @@ const MyBookings = () => {
     );
   }
 
+  // =========================
+  // ERROR
+  // =========================
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#080b14] px-4">
         <div className="rounded-xl bg-[#10131d] p-6 text-center">
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-400">
+            {error}
+          </p>
 
           <button
             onClick={fetchMyBookings}
@@ -552,6 +950,9 @@ const MyBookings = () => {
     );
   }
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div className="min-h-screen bg-[#080b14] px-4 py-8 text-white md:px-8">
       <div className="mx-auto max-w-6xl">
@@ -566,7 +967,10 @@ const MyBookings = () => {
 
         {bookings.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-[#10131d] p-10 text-center">
-            <div className="text-5xl">🎟️</div>
+
+            <div className="text-5xl">
+              🎟️
+            </div>
 
             <h2 className="mt-4 text-xl font-semibold">
               No bookings found
@@ -575,130 +979,192 @@ const MyBookings = () => {
             <p className="mt-2 text-gray-400">
               You have not booked any event yet.
             </p>
+
           </div>
         ) : (
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {bookings.map((booking) => {
-              const eventName = getEventName(booking);
-              const eventImage = getEventImage(booking);
-              const status = getStatus(booking);
-              const isCancelled = status === "cancelled";
 
-              return (
-                <div
-                  key={booking._id}
-                  className="overflow-hidden rounded-2xl border border-white/10 bg-[#10131d] shadow-lg"
-                >
-                  {eventImage ? (
-                    <img
-                      src={eventImage}
-                      alt={eventName}
-                      className="h-48 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-48 items-center justify-center bg-violet-500/10 text-5xl">
-                      🎫
-                    </div>
-                  )}
+            {bookings.map(
+              (booking) => {
+                const eventName =
+                  getEventName(
+                    booking
+                  );
 
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <h2 className="text-xl font-bold">
-                        {eventName}
-                      </h2>
+                const eventImage =
+                  getEventImage(
+                    booking
+                  );
 
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs capitalize ${
-                          isCancelled
-                            ? "bg-red-500/15 text-red-400"
-                            : status === "refunded"
-                            ? "bg-blue-500/15 text-blue-400"
-                            : "bg-green-500/15 text-green-400"
-                        }`}
-                      >
-                        {status}
-                      </span>
-                    </div>
+                const status =
+                  getStatus(
+                    booking
+                  );
 
-                    <div className="mt-4 space-y-2 text-sm text-gray-400">
-                      <p>
-                        <span className="text-gray-300">
-                          Date:
-                        </span>{" "}
-                        {formatDate(getEventDate(booking))}
-                      </p>
+                const isCancelled =
+                  status ===
+                  "cancelled";
 
-                      <p>
-                        <span className="text-gray-300">
-                          Time:
-                        </span>{" "}
-                        {getEventTime(booking)}
-                      </p>
+                return (
+                  <div
+                    key={
+                      booking._id ||
+                      booking.id
+                    }
+                    className="overflow-hidden rounded-2xl border border-white/10 bg-[#10131d] shadow-lg"
+                  >
 
-                      <p>
-                        <span className="text-gray-300">
-                          Location:
-                        </span>{" "}
-                        {getEventLocation(booking)}
-                      </p>
+                    {eventImage ? (
+                      <img
+                        src={eventImage}
+                        alt={eventName}
+                        className="h-48 w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-48 items-center justify-center bg-violet-500/10 text-5xl">
+                        🎫
+                      </div>
+                    )}
 
-                      <p>
-                        <span className="text-gray-300">
-                          Tickets:
-                        </span>{" "}
-                        {getQuantity(booking)}
-                      </p>
+                    <div className="p-5">
 
-                      <p>
-                        <span className="text-gray-300">
-                          Total:
-                        </span>{" "}
-                        ₹{getTotalAmount(booking)}
-                      </p>
-                    </div>
+                      <div className="flex items-start justify-between gap-3">
 
-                    <div className="mt-5 flex gap-3">
-                      <button
-                        onClick={() =>
-                          setSelectedBooking(booking)
-                        }
-                        className="flex-1 rounded-xl bg-violet-600 px-4 py-3 font-semibold hover:bg-violet-500"
-                      >
-                        My Ticket
-                      </button>
+                        <h2 className="text-xl font-bold">
+                          {eventName}
+                        </h2>
 
-                      {!isCancelled &&
-                        status !== "refunded" && (
-                          <button
-                            onClick={() =>
-                              cancelTicket(booking)
-                            }
-                            className="rounded-xl bg-red-600/20 px-4 py-3 font-semibold text-red-400 hover:bg-red-600/30"
-                          >
-                            Cancel
-                          </button>
-                        )}
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs capitalize ${
+                            isCancelled
+                              ? "bg-red-500/15 text-red-400"
+                              : status ===
+                                "refunded"
+                              ? "bg-blue-500/15 text-blue-400"
+                              : "bg-green-500/15 text-green-400"
+                          }`}
+                        >
+                          {status}
+                        </span>
+
+                      </div>
+
+                      <div className="mt-4 space-y-2 text-sm text-gray-400">
+
+                        <p>
+                          <span className="text-gray-300">
+                            Date:
+                          </span>{" "}
+                          {formatDate(
+                            getEventDate(
+                              booking
+                            )
+                          )}
+                        </p>
+
+                        <p>
+                          <span className="text-gray-300">
+                            Time:
+                          </span>{" "}
+                          {getEventTime(
+                            booking
+                          )}
+                        </p>
+
+                        <p>
+                          <span className="text-gray-300">
+                            Location:
+                          </span>{" "}
+                          {getEventLocation(
+                            booking
+                          )}
+                        </p>
+
+                        <p>
+                          <span className="text-gray-300">
+                            Tickets:
+                          </span>{" "}
+                          {getQuantity(
+                            booking
+                          )}
+                        </p>
+
+                        <p>
+                          <span className="text-gray-300">
+                            Total:
+                          </span>{" "}
+                          ₹
+                          {getTotalAmount(
+                            booking
+                          )}
+                        </p>
+
+                      </div>
+
+                      <div className="mt-5 flex gap-3">
+
+                        <button
+                          onClick={() =>
+                            setSelectedBooking(
+                              booking
+                            )
+                          }
+                          className="flex-1 rounded-xl bg-violet-600 px-4 py-3 font-semibold hover:bg-violet-500"
+                        >
+                          My Ticket
+                        </button>
+
+                        {!isCancelled &&
+                          status !==
+                            "refunded" && (
+                            <button
+                              onClick={() =>
+                                cancelTicket(
+                                  booking
+                                )
+                              }
+                              className="rounded-xl bg-red-600/20 px-4 py-3 font-semibold text-red-400 hover:bg-red-600/30"
+                            >
+                              Cancel
+                            </button>
+                          )}
+
+                      </div>
+
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              }
+            )}
+
           </div>
         )}
+
       </div>
+
+      {/* =========================
+          TICKET MODAL
+      ========================= */}
 
       {selectedBooking && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 px-4 py-8"
-          onClick={() => setSelectedBooking(null)}
+          onClick={() =>
+            setSelectedBooking(null)
+          }
         >
+
           <div
             className="w-full max-w-md"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) =>
+              event.stopPropagation()
+            }
           >
+
             <div className="rounded-2xl border border-white/10 bg-[#10131d] p-6 text-white shadow-2xl">
 
               <div className="mb-5 text-center">
+
                 <h2 className="text-3xl font-extrabold text-violet-500">
                   EventX
                 </h2>
@@ -706,123 +1172,194 @@ const MyBookings = () => {
                 <p className="mt-1 text-sm text-gray-400">
                   Your Event Ticket
                 </p>
+
               </div>
 
-              {getEventImage(selectedBooking) && (
+              {getEventImage(
+                selectedBooking
+              ) && (
                 <img
-                  src={getEventImage(selectedBooking)}
-                  alt={getEventName(selectedBooking)}
+                  src={getEventImage(
+                    selectedBooking
+                  )}
+                  alt={getEventName(
+                    selectedBooking
+                  )}
                   className="mb-5 h-44 w-full rounded-xl object-cover"
                 />
               )}
 
               <h3 className="mb-5 text-center text-2xl font-bold">
-                {getEventName(selectedBooking)}
+                {getEventName(
+                  selectedBooking
+                )}
               </h3>
 
               <div className="space-y-3 text-sm">
+
                 {[
                   [
                     "Booking ID",
-                    getBookingId(selectedBooking),
+                    getBookingId(
+                      selectedBooking
+                    ),
                   ],
-                  ["Name", getUserName(selectedBooking)],
-                  ["Email", getUserEmail(selectedBooking)],
-                  ["Mobile", getUserMobile(selectedBooking)],
+                  [
+                    "Name",
+                    getUserName(
+                      selectedBooking
+                    ),
+                  ],
+                  [
+                    "Email",
+                    getUserEmail(
+                      selectedBooking
+                    ),
+                  ],
+                  [
+                    "Mobile",
+                    getUserMobile(
+                      selectedBooking
+                    ),
+                  ],
                   [
                     "Date",
                     formatDate(
-                      getEventDate(selectedBooking)
+                      getEventDate(
+                        selectedBooking
+                      )
                     ),
                   ],
-                  ["Time", getEventTime(selectedBooking)],
+                  [
+                    "Time",
+                    getEventTime(
+                      selectedBooking
+                    ),
+                  ],
                   [
                     "Location",
-                    getEventLocation(selectedBooking),
+                    getEventLocation(
+                      selectedBooking
+                    ),
                   ],
                   [
                     "Quantity",
-                    getQuantity(selectedBooking),
+                    getQuantity(
+                      selectedBooking
+                    ),
                   ],
                   [
                     "Payment",
-                    getPaymentMethod(selectedBooking),
+                    getPaymentMethod(
+                      selectedBooking
+                    ),
                   ],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex justify-between gap-4 border-b border-white/10 pb-2"
-                  >
-                    <span className="text-gray-400">
-                      {label}
-                    </span>
+                ].map(
+                  ([label, value]) => (
+                    <div
+                      key={label}
+                      className="flex justify-between gap-4 border-b border-white/10 pb-2"
+                    >
+                      <span className="text-gray-400">
+                        {label}
+                      </span>
 
-                    <span className="break-all text-right font-semibold text-gray-200">
-                      {value}
-                    </span>
-                  </div>
-                ))}
+                      <span className="break-all text-right font-semibold text-gray-200">
+                        {value}
+                      </span>
+                    </div>
+                  )
+                )}
 
                 <div className="flex justify-between gap-4 border-b border-white/10 pb-2">
+
                   <span className="text-gray-400">
                     Total Amount
                   </span>
 
                   <span className="text-lg font-bold text-violet-500">
-                    ₹{getTotalAmount(selectedBooking)}
+                    ₹
+                    {getTotalAmount(
+                      selectedBooking
+                    )}
                   </span>
+
                 </div>
 
                 <div className="flex justify-between gap-4">
+
                   <span className="text-gray-400">
                     Status
                   </span>
 
                   <span
                     className={`font-bold capitalize ${
-                      getStatus(selectedBooking) === "cancelled"
+                      getStatus(
+                        selectedBooking
+                      ) === "cancelled"
                         ? "text-red-400"
-                        : getStatus(selectedBooking) === "refunded"
+                        : getStatus(
+                            selectedBooking
+                          ) === "refunded"
                         ? "text-blue-400"
                         : "text-green-400"
                     }`}
                   >
-                    {getStatus(selectedBooking)}
+                    {getStatus(
+                      selectedBooking
+                    )}
                   </span>
+
                 </div>
+
               </div>
 
               <div className="my-6 border-t-2 border-dashed border-white/20" />
 
               <div className="flex flex-col items-center">
+
                 <div className="rounded-xl bg-white p-4">
+
                   <QRCodeSVG
-                    value={getQrValue(selectedBooking)}
+                    value={getQrValue(
+                      selectedBooking
+                    )}
                     size={220}
                     level="H"
                     includeMargin={true}
                     bgColor="#ffffff"
                     fgColor="#000000"
                   />
+
                 </div>
 
                 <p className="mt-3 text-center text-xs text-gray-400">
                   Scan this QR code to view booking details
                 </p>
+
               </div>
 
               <p className="mt-6 text-center text-xs text-gray-500">
                 Thank you for booking with EventX
               </p>
+
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3">
-              {!["cancelled", "refunded"].includes(
-                getStatus(selectedBooking)
+
+              {![
+                "cancelled",
+                "refunded",
+              ].includes(
+                getStatus(
+                  selectedBooking
+                )
               ) && (
                 <button
                   onClick={() =>
-                    cancelTicket(selectedBooking)
+                    cancelTicket(
+                      selectedBooking
+                    )
                   }
                   disabled={cancelling}
                   className="flex-1 rounded-xl bg-red-600/20 px-4 py-3 font-semibold text-red-400 hover:bg-red-600/30 disabled:opacity-50"
@@ -834,7 +1371,9 @@ const MyBookings = () => {
               )}
 
               <button
-                onClick={downloadTicketPDF}
+                onClick={
+                  downloadTicketPDF
+                }
                 disabled={downloading}
                 className="flex-1 rounded-xl bg-violet-600 px-4 py-3 font-semibold hover:bg-violet-500 disabled:opacity-50"
               >
@@ -844,15 +1383,23 @@ const MyBookings = () => {
               </button>
 
               <button
-                onClick={() => setSelectedBooking(null)}
+                onClick={() =>
+                  setSelectedBooking(
+                    null
+                  )
+                }
                 className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-gray-300 hover:bg-white/10"
               >
                 Close
               </button>
+
             </div>
+
           </div>
+
         </div>
       )}
+
     </div>
   );
 };

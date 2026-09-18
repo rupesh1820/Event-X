@@ -17,12 +17,14 @@ import CategoryEvents from "./Pages/CategoryEvent";
 // Authentication
 import Login from "./Components/Login";
 import Signup from "./Components/Signup";
+import ForgotPassword from "./Components/ForgotPassword";
+import VerifyResetOtp from "./Components/VerifyResetPassword";
 
 // User Pages
 import Profile from "./Pages/Profile";
 import EditProfile from "./Pages/EditProfile";
 
-import Wishlist from "./Pages/Wishlist"
+import Wishlist from "./Pages/Wishlist";
 import PaymentMethods from "./Pages/PaymentMethods";
 import MyBookings from "./Pages/MyBookings";
 import TicketBooking from "./Pages/TicketBooking";
@@ -43,6 +45,7 @@ import AdminBookings from "./Pages/Admin/AdminBooking";
 import AdminUsers from "./Pages/Admin/AdminUser";
 import AdminAccount from "./Pages/Admin/AdminAccount";
 import Notifications from "./Pages/Admin/Notifications";
+import ResetPassword from "./Components/ResetPassword";
 
 function App() {
   const location = useLocation();
@@ -60,13 +63,11 @@ function App() {
 
   // Login aur Signup pages par Navbar/Footer hide rahenge
   const isAuthPage =
-    location.pathname === "/login" ||
-    location.pathname === "/signup";
+    location.pathname === "/login" || location.pathname === "/signup" || location.pathname=== "/forgot-password";
 
   const isDashboard = dashboardPaths.some(
     (path) =>
-      location.pathname === path ||
-      location.pathname.startsWith(`${path}/`)
+      location.pathname === path || location.pathname.startsWith(`${path}/`),
   );
 
   return (
@@ -89,12 +90,15 @@ function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route
+  path="/verify-reset-otp"
+  element={<VerifyResetOtp />}
+/>
+<Route path="/reset-password" element={<ResetPassword/>}/>
 
         {/* ================= USER ROUTES ================= */}
 
         <Route path="/profile" element={<Profile />} />
-
-       
 
         <Route
           path="/wishlist"
@@ -104,9 +108,6 @@ function App() {
             </RouteGuard>
           }
         />
-
-
-        
 
         <Route
           path="/payments"
@@ -257,6 +258,7 @@ function App() {
             </RouteGuard>
           }
         />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
 
       {!isAuthPage && !isDashboard && <Footer />}

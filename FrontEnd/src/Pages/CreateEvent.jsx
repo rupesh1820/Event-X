@@ -149,7 +149,7 @@ const CreateEvent = () => {
       console.log("Event API URL:", `${API_URL}/api/event-create`);
 
       const response = await axios.post(
-        `${API_URL}/api/event-create`,
+        `${API_URL}api/event-create`,
         payload,
         {
           headers: {
