@@ -30,6 +30,7 @@ const allowedOrigins = [
     "https://event-x-official.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://event-x-official-wb.vercel.app/"
 ];
 
 app.use(
