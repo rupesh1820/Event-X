@@ -1,32 +1,63 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import dns from "dns";
 import nodemailer from "nodemailer";
+
+// ========================================
+// FORCE IPv4
+// ========================================
+
+dns.setDefaultResultOrder("ipv4first");
+
+// ========================================
+// __dirname setup
+// ========================================
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Backend/.env
+// ========================================
+// Load Backend/.env
+// ========================================
+
 dotenv.config({
   path: path.resolve(__dirname, "../.env"),
 });
 
-console.log("EMAIL_USER loaded:", !!process.env.EMAIL_USER);
-console.log("EMAIL_PASS loaded:", !!process.env.EMAIL_PASS);
+// ========================================
+// Check Environment Variables
+// ========================================
 
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+console.log(
+  "EMAIL_USER loaded:",
+  !!process.env.EMAIL_USER
+);
+
+console.log(
+  "EMAIL_PASS loaded:",
+  !!process.env.EMAIL_PASS
+);
+
+if (
+  !process.env.EMAIL_USER ||
+  !process.env.EMAIL_PASS
+) {
   throw new Error(
     "EMAIL_USER ya EMAIL_PASS .env file me missing hai"
   );
 }
 
 // ========================================
-// Gmail SMTP
+// Gmail SMTP Transporter
 // ========================================
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
+
+  // Gmail SMTP SSL
   port: 465,
+
   secure: true,
 
   auth: {
@@ -34,21 +65,23 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 
+  // Timeout settings
   connectionTimeout: 30000,
   greetingTimeout: 30000,
   socketTimeout: 60000,
 });
 
 // ========================================
-// Check SMTP connection
+// Check SMTP Connection
 // ========================================
 
 transporter.verify((error, success) => {
   if (error) {
     console.error(
-      "Gmail SMTP connection failed:",
-      error.message
+      "Gmail SMTP connection failed:"
     );
+
+    console.error(error);
   } else {
     console.log(
       "Gmail SMTP connection successful"
@@ -66,17 +99,37 @@ export const sendOtpEmail = async (
   purpose = "verification"
 ) => {
   try {
+    console.log(
+      `Sending OTP to: ${email}`
+    );
+
+    console.log(
+      `OTP generated: ${otp}`
+    );
+
+    // ========================================
+    // Email Subject
+    // ========================================
+
     const subject =
       purpose === "password-reset"
         ? "EventX Password Reset OTP"
         : "EventX Verification OTP";
+
+    // ========================================
+    // Send Email
+    // ========================================
 
     const info = await transporter.sendMail({
       from: `"EventX" <${process.env.EMAIL_USER}>`,
 
       to: email,
 
-      subject,
+      subject: subject,
+
+      // ======================================
+      // Plain Text
+      // ======================================
 
       text: `
 Your EventX OTP is ${otp}.
@@ -85,6 +138,10 @@ This OTP is valid for 10 minutes.
 
 If you did not request this OTP, please ignore this email.
       `,
+
+      // ======================================
+      // HTML Email
+      // ======================================
 
       html: `
         <div style="
@@ -112,7 +169,9 @@ If you did not request this OTP, please ignore this email.
             }
           </h2>
 
-          <p style="color: #cccccc;">
+          <p style="
+            color: #cccccc;
+          ">
             Your EventX verification OTP is:
           </p>
 
@@ -130,7 +189,9 @@ If you did not request this OTP, please ignore this email.
             ${otp}
           </div>
 
-          <p style="color: #aaaaaa;">
+          <p style="
+            color: #aaaaaa;
+          ">
             This OTP is valid for 10 minutes.
           </p>
 
@@ -146,19 +207,46 @@ If you did not request this OTP, please ignore this email.
       `,
     });
 
-    console.log("OTP email sent successfully");
-    console.log("Message ID:", info.messageId);
-    console.log("Accepted:", info.accepted);
-    console.log("Rejected:", info.rejected);
+    // ========================================
+    // Success Logs
+    // ========================================
+
+    console.log(
+      "OTP email sent successfully"
+    );
+
+    console.log(
+      "Message ID:",
+      info.messageId
+    );
+
+    console.log(
+      "Accepted:",
+      info.accepted
+    );
+
+    console.log(
+      "Rejected:",
+      info.rejected
+    );
 
     return info;
 
   } catch (error) {
+    // ========================================
+    // Error Logs
+    // ========================================
+
     console.error(
-      "OTP email error:",
-      error.message
+      "OTP email error:"
+    );
+
+    console.error(
+      error
     );
 
     throw error;
   }
 };
+
+export default transporter;
