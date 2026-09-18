@@ -27,8 +27,7 @@ const port = process.env.PORT || 5000;
 // ===============================
 
 const allowedOrigins = [
-  "https://event-x-fw68.vercel.app",
-  "https://event-x-bice.vercel.app",
+    "https://event-x-official.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
 ];
