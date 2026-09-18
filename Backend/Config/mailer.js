@@ -1,24 +1,17 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import dns from "dns";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 // ========================================
-// FORCE IPv4
-// ========================================
-
-dns.setDefaultResultOrder("ipv4first");
-
-// ========================================
-// __dirname setup
+// Path setup
 // ========================================
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ========================================
-// Load Backend/.env
+// Load .env
 // ========================================
 
 dotenv.config({
@@ -26,71 +19,27 @@ dotenv.config({
 });
 
 // ========================================
-// Environment Variables Check
+// Check API Key
 // ========================================
 
 console.log(
-  "EMAIL_USER loaded:",
-  !!process.env.EMAIL_USER
+  "RESEND_API_KEY loaded:",
+  !!process.env.RESEND_API_KEY
 );
 
-console.log(
-  "EMAIL_PASS loaded:",
-  !!process.env.EMAIL_PASS
-);
-
-if (
-  !process.env.EMAIL_USER ||
-  !process.env.EMAIL_PASS
-) {
+if (!process.env.RESEND_API_KEY) {
   throw new Error(
-    "EMAIL_USER ya EMAIL_PASS .env file me missing hai"
+    "RESEND_API_KEY .env / Render Environment Variables me missing hai"
   );
 }
 
 // ========================================
-// Gmail SMTP Transporter
-// Port 587 + STARTTLS
+// Resend
 // ========================================
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-
-  port: 587,
-
-  secure: false,
-
-  requireTLS: true,
-
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-
-  connectionTimeout: 30000,
-
-  greetingTimeout: 30000,
-
-  socketTimeout: 60000,
-});
-
-// ========================================
-// Verify SMTP Connection
-// ========================================
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error(
-      "Gmail SMTP connection failed:"
-    );
-
-    console.error(error);
-  } else {
-    console.log(
-      "Gmail SMTP connection successful"
-    );
-  }
-});
+const resend = new Resend(
+  process.env.RESEND_API_KEY
+);
 
 // ========================================
 // Send OTP Email
@@ -126,7 +75,7 @@ export const sendOtpEmail = async (
         : "EventX Verification OTP";
 
     // ======================================
-    // HTML Heading
+    // Heading
     // ======================================
 
     const heading =
@@ -138,36 +87,28 @@ export const sendOtpEmail = async (
     // Send Email
     // ======================================
 
-    const info = await transporter.sendMail({
-      from: `"EventX" <${process.env.EMAIL_USER}>`,
+    const { data, error } =
+      await resend.emails.send({
+        from: "EventX <onboarding@resend.dev>",
 
-      to: email,
+        to: [email],
 
-      subject: subject,
+        subject: subject,
 
-      // ====================================
-      // Plain Text Email
-      // ====================================
-
-      text: `
+        text: `
 Your EventX OTP is ${otp}.
 
 This OTP is valid for 10 minutes.
 
 If you did not request this OTP, please ignore this email.
-      `,
+        `,
 
-      // ====================================
-      // HTML Email
-      // ====================================
-
-      html: `
+        html: `
 <!DOCTYPE html>
 
 <html>
 
 <head>
-
   <meta charset="UTF-8" />
 
   <meta
@@ -176,7 +117,6 @@ If you did not request this OTP, please ignore this email.
   />
 
   <title>${subject}</title>
-
 </head>
 
 <body
@@ -206,8 +146,6 @@ If you did not request this OTP, please ignore this email.
       "
     >
 
-      <!-- Logo -->
-
       <h1
         style="
           margin: 0 0 25px 0;
@@ -218,18 +156,14 @@ If you did not request this OTP, please ignore this email.
         EventX
       </h1>
 
-      <!-- Heading -->
-
       <h2
         style="
-          margin-bottom: 15px;
           color: #ffffff;
+          margin-bottom: 15px;
         "
       >
         ${heading}
       </h2>
-
-      <!-- Message -->
 
       <p
         style="
@@ -240,8 +174,6 @@ If you did not request this OTP, please ignore this email.
       >
         Your EventX verification OTP is:
       </p>
-
-      <!-- OTP -->
 
       <div
         style="
@@ -267,13 +199,10 @@ If you did not request this OTP, please ignore this email.
 
       </div>
 
-      <!-- Expiry -->
-
       <p
         style="
           color: #aaaaaa;
           font-size: 14px;
-          line-height: 1.6;
         "
       >
         This OTP is valid for
@@ -282,21 +211,16 @@ If you did not request this OTP, please ignore this email.
         </strong>.
       </p>
 
-      <!-- Security -->
-
       <p
         style="
           color: #777777;
           font-size: 13px;
-          line-height: 1.6;
           margin-top: 25px;
         "
       >
         If you did not request this OTP,
         you can safely ignore this email.
       </p>
-
-      <!-- Footer -->
 
       <div
         style="
@@ -314,7 +238,6 @@ If you did not request this OTP, please ignore this email.
           "
         >
           This is an automated email from EventX.
-          Please do not reply to this email.
         </p>
 
       </div>
@@ -326,8 +249,24 @@ If you did not request this OTP, please ignore this email.
 </body>
 
 </html>
-      `,
-    });
+        `,
+      });
+
+    // ======================================
+    // Resend Error
+    // ======================================
+
+    if (error) {
+      console.error(
+        "Resend email error:"
+      );
+
+      console.error(error);
+
+      throw new Error(
+        error.message || "Unable to send OTP"
+      );
+    }
 
     // ======================================
     // Success
@@ -338,57 +277,22 @@ If you did not request this OTP, please ignore this email.
     );
 
     console.log(
-      "Message ID:",
-      info.messageId
-    );
-
-    console.log(
-      "Accepted:",
-      info.accepted
-    );
-
-    console.log(
-      "Rejected:",
-      info.rejected
+      "Resend Email ID:",
+      data?.id
     );
 
     console.log(
       "========================================"
     );
 
-    return info;
+    return data;
 
   } catch (error) {
-
-    // ======================================
-    // Error
-    // ======================================
-
     console.error(
-      "OTP email error:"
-    );
-
-    console.error(
-      "Error code:",
-      error.code
-    );
-
-    console.error(
-      "Error message:",
+      "OTP email error:",
       error.message
-    );
-
-    console.error(
-      "Error command:",
-      error.command
     );
 
     throw error;
   }
 };
-
-// ========================================
-// Export transporter
-// ========================================
-
-export default transporter;
