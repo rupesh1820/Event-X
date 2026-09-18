@@ -26,7 +26,7 @@ dotenv.config({
 });
 
 // ========================================
-// Check Environment Variables
+// Environment Variables Check
 // ========================================
 
 console.log(
@@ -50,29 +50,32 @@ if (
 
 // ========================================
 // Gmail SMTP Transporter
+// Port 587 + STARTTLS
 // ========================================
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
 
-  // Gmail SMTP SSL
-  port: 465,
+  port: 587,
 
-  secure: true,
+  secure: false,
+
+  requireTLS: true,
 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 
-  // Timeout settings
   connectionTimeout: 30000,
+
   greetingTimeout: 30000,
+
   socketTimeout: 60000,
 });
 
 // ========================================
-// Check SMTP Connection
+// Verify SMTP Connection
 // ========================================
 
 transporter.verify((error, success) => {
@@ -100,25 +103,40 @@ export const sendOtpEmail = async (
 ) => {
   try {
     console.log(
-      `Sending OTP to: ${email}`
+      "========================================"
     );
 
     console.log(
-      `OTP generated: ${otp}`
+      "Sending OTP to:",
+      email
     );
 
-    // ========================================
-    // Email Subject
-    // ========================================
+    console.log(
+      "OTP generated:",
+      otp
+    );
+
+    // ======================================
+    // Subject
+    // ======================================
 
     const subject =
       purpose === "password-reset"
         ? "EventX Password Reset OTP"
         : "EventX Verification OTP";
 
-    // ========================================
+    // ======================================
+    // HTML Heading
+    // ======================================
+
+    const heading =
+      purpose === "password-reset"
+        ? "Password Reset"
+        : "Email Verification";
+
+    // ======================================
     // Send Email
-    // ========================================
+    // ======================================
 
     const info = await transporter.sendMail({
       from: `"EventX" <${process.env.EMAIL_USER}>`,
@@ -127,9 +145,9 @@ export const sendOtpEmail = async (
 
       subject: subject,
 
-      // ======================================
-      // Plain Text
-      // ======================================
+      // ====================================
+      // Plain Text Email
+      // ====================================
 
       text: `
 Your EventX OTP is ${otp}.
@@ -139,77 +157,181 @@ This OTP is valid for 10 minutes.
 If you did not request this OTP, please ignore this email.
       `,
 
-      // ======================================
+      // ====================================
       // HTML Email
-      // ======================================
+      // ====================================
 
       html: `
-        <div style="
-          font-family: Arial, sans-serif;
-          max-width: 600px;
-          margin: 30px auto;
-          padding: 30px;
-          background: #080711;
-          color: white;
-          border-radius: 16px;
-        ">
+<!DOCTYPE html>
 
-          <h1 style="
-            color: #8b5cf6;
-            margin-bottom: 20px;
-          ">
-            EventX
-          </h1>
+<html>
 
-          <h2>
-            ${
-              purpose === "password-reset"
-                ? "Password Reset"
-                : "Email Verification"
-            }
-          </h2>
+<head>
 
-          <p style="
-            color: #cccccc;
-          ">
-            Your EventX verification OTP is:
-          </p>
+  <meta charset="UTF-8" />
 
-          <div style="
-            margin: 25px 0;
-            padding: 15px;
-            background: #17112b;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 32px;
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>${subject}</title>
+
+</head>
+
+<body
+  style="
+    margin: 0;
+    padding: 0;
+    background: #050505;
+    font-family: Arial, Helvetica, sans-serif;
+  "
+>
+
+  <div
+    style="
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+    "
+  >
+
+    <div
+      style="
+        background: #080711;
+        color: #ffffff;
+        border-radius: 16px;
+        padding: 35px;
+        border: 1px solid #222;
+      "
+    >
+
+      <!-- Logo -->
+
+      <h1
+        style="
+          margin: 0 0 25px 0;
+          color: #8b5cf6;
+          font-size: 32px;
+        "
+      >
+        EventX
+      </h1>
+
+      <!-- Heading -->
+
+      <h2
+        style="
+          margin-bottom: 15px;
+          color: #ffffff;
+        "
+      >
+        ${heading}
+      </h2>
+
+      <!-- Message -->
+
+      <p
+        style="
+          color: #cccccc;
+          font-size: 16px;
+          line-height: 1.6;
+        "
+      >
+        Your EventX verification OTP is:
+      </p>
+
+      <!-- OTP -->
+
+      <div
+        style="
+          margin: 30px 0;
+          padding: 20px;
+          background: #17112b;
+          border-radius: 12px;
+          text-align: center;
+          border: 1px solid #2d2050;
+        "
+      >
+
+        <span
+          style="
+            font-size: 36px;
             font-weight: bold;
-            letter-spacing: 8px;
+            letter-spacing: 10px;
             color: #8b5cf6;
-          ">
-            ${otp}
-          </div>
+          "
+        >
+          ${otp}
+        </span>
 
-          <p style="
-            color: #aaaaaa;
-          ">
-            This OTP is valid for 10 minutes.
-          </p>
+      </div>
 
-          <p style="
-            color: #777777;
-            font-size: 13px;
-          ">
-            If you did not request this OTP,
-            you can safely ignore this email.
-          </p>
+      <!-- Expiry -->
 
-        </div>
+      <p
+        style="
+          color: #aaaaaa;
+          font-size: 14px;
+          line-height: 1.6;
+        "
+      >
+        This OTP is valid for
+        <strong style="color: #ffffff;">
+          10 minutes
+        </strong>.
+      </p>
+
+      <!-- Security -->
+
+      <p
+        style="
+          color: #777777;
+          font-size: 13px;
+          line-height: 1.6;
+          margin-top: 25px;
+        "
+      >
+        If you did not request this OTP,
+        you can safely ignore this email.
+      </p>
+
+      <!-- Footer -->
+
+      <div
+        style="
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px solid #222;
+        "
+      >
+
+        <p
+          style="
+            margin: 0;
+            color: #666666;
+            font-size: 12px;
+          "
+        >
+          This is an automated email from EventX.
+          Please do not reply to this email.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+
+</html>
       `,
     });
 
-    // ========================================
-    // Success Logs
-    // ========================================
+    // ======================================
+    // Success
+    // ======================================
 
     console.log(
       "OTP email sent successfully"
@@ -230,23 +352,43 @@ If you did not request this OTP, please ignore this email.
       info.rejected
     );
 
+    console.log(
+      "========================================"
+    );
+
     return info;
 
   } catch (error) {
-    // ========================================
-    // Error Logs
-    // ========================================
+
+    // ======================================
+    // Error
+    // ======================================
 
     console.error(
       "OTP email error:"
     );
 
     console.error(
-      error
+      "Error code:",
+      error.code
+    );
+
+    console.error(
+      "Error message:",
+      error.message
+    );
+
+    console.error(
+      "Error command:",
+      error.command
     );
 
     throw error;
   }
 };
+
+// ========================================
+// Export transporter
+// ========================================
 
 export default transporter;
