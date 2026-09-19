@@ -1,5 +1,5 @@
-import "dotenv/config";
 
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
@@ -19,150 +19,75 @@ import {
 } from "./Controllers/AuthContro.js";
 
 const app = express();
-
 const port = process.env.PORT || 5000;
 
-// ===============================
-// CORS
-// ===============================
-
 const allowedOrigins = [
-    "https://event-x-official.vercel.app",
+  "https://event-x-official.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
   "https://event-x-official-wb.vercel.app",
-  "https://event-x-official-wb.vercel.app/"
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests like Postman/server-to-server
-      if (!origin) {
+      if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      console.log("Blocked CORS origin:", origin);
-
       return callback(new Error("Not allowed by CORS"));
     },
-
     credentials: true,
   })
 );
 
-// ===============================
-// BODY PARSER
-// ===============================
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ===============================
-// ROUTES
-// ===============================
-
-// Authentication
 app.use("/api/auth", authRouter);
-
-// Events
 app.use("/api", eventRouter);
-
-// Roles
 app.use("/api", Rolerouter);
 
-// ===============================
-// BOOKINGS
-// ===============================
+app.post("/api/book", requireAuth, bookingUp);
+app.get("/api/book", getBookings);
+app.patch("/api/book/:id", requireAuth, cancelBooking);
 
-// Create booking
-app.post(
-  "/api/book",
-  requireAuth,
-  bookingUp
-);
-
-// Get bookings
-app.get(
-  "/api/book",
-  getBookings
-);
-
-// Cancel booking
-app.patch(
-  "/api/book/:id",
-  requireAuth,
-  cancelBooking
-);
-
-// ===============================
-// PAYMENT
-// ===============================
-
-app.use(
-  "/api/payment",
-  PaymentRouter
-);
-
-// ===============================
-// ADMIN
-// ===============================
-
-app.use(
-  "/api/admin",
-  AdminRouter
-);
-
-// ===============================
-// INQUIRIES
-// ===============================
-
-app.use(
-  "/api/inquiries",
-  inquiryrouter
-);
-
-// ===============================
-// HEALTH CHECK
-// ===============================
+app.use("/api/payment", PaymentRouter);
+app.use("/api/admin", AdminRouter);
+app.use("/api/inquiries", inquiryrouter);
 
 app.get("/", (req, res) => {
   res.status(200).send("EventX Server is running");
 });
 
-// ===============================
-// START SERVER
-// ===============================
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err);
+
+  if (err?.name === "MulterError") {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: err?.message || "Internal server error",
+  });
+});
 
 const startServer = async () => {
   try {
     await connectDB();
 
-    app.listen(
-      port,
-      "0.0.0.0",
-      () => {
-        console.log(
-          `Server running on port http://localhost:${port}`
-        );
-
-        console.log(
-          "JWT_SECRET loaded:",
-          !!process.env.JWT_SECRET
-        );
-      }
-    );
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`Server running on port ${port}`);
+      console.log("JWT_SECRET loaded:", !!process.env.JWT_SECRET);
+    });
   } catch (error) {
-    console.error(
-      `Database startup failed: ${error.message}`
-    );
-
+    console.error("Database startup failed:", error.message);
     process.exit(1);
   }
 };
 
 startServer();
+

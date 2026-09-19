@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 // ========================================
 // Path setup
@@ -19,27 +19,56 @@ dotenv.config({
 });
 
 // ========================================
-// Check API Key
+// Check Email Credentials
 // ========================================
 
 console.log(
-  "RESEND_API_KEY loaded:",
-  !!process.env.RESEND_API_KEY
+  "EMAIL_USER loaded:",
+  !!process.env.EMAIL_USER
 );
 
-if (!process.env.RESEND_API_KEY) {
+console.log(
+  "EMAIL_PASS loaded:",
+  !!process.env.EMAIL_PASS
+);
+
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
   throw new Error(
-    "RESEND_API_KEY .env / Render Environment Variables me missing hai"
+    "EMAIL_USER / EMAIL_PASS .env ya Render Environment Variables me missing hai"
   );
 }
 
 // ========================================
-// Resend
+// Gmail Transporter
 // ========================================
 
-const resend = new Resend(
-  process.env.RESEND_API_KEY
-);
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// ========================================
+// Verify SMTP Connection
+// ========================================
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error(
+      "Gmail SMTP connection error:",
+      error
+    );
+  } else {
+    console.log(
+      "Gmail SMTP server is ready"
+    );
+  }
+});
 
 // ========================================
 // Send OTP Email
@@ -87,23 +116,22 @@ export const sendOtpEmail = async (
     // Send Email
     // ======================================
 
-    const { data, error } =
-      await resend.emails.send({
-        from: "EventX <onboarding@resend.dev>",
+    const info = await transporter.sendMail({
+      from: `"EventX" <${process.env.EMAIL_USER}>`,
 
-        to: [email],
+      to: email,
 
-        subject: subject,
+      subject: subject,
 
-        text: `
+      text: `
 Your EventX OTP is ${otp}.
 
 This OTP is valid for 10 minutes.
 
 If you did not request this OTP, please ignore this email.
-        `,
+      `,
 
-        html: `
+      html: `
 <!DOCTYPE html>
 
 <html>
@@ -249,24 +277,8 @@ If you did not request this OTP, please ignore this email.
 </body>
 
 </html>
-        `,
-      });
-
-    // ======================================
-    // Resend Error
-    // ======================================
-
-    if (error) {
-      console.error(
-        "Resend email error:"
-      );
-
-      console.error(error);
-
-      throw new Error(
-        error.message || "Unable to send OTP"
-      );
-    }
+      `,
+    });
 
     // ======================================
     // Success
@@ -277,22 +289,25 @@ If you did not request this OTP, please ignore this email.
     );
 
     console.log(
-      "Resend Email ID:",
-      data?.id
+      "Message ID:",
+      info.messageId
     );
 
     console.log(
       "========================================"
     );
 
-    return data;
+    return info;
 
   } catch (error) {
+
     console.error(
       "OTP email error:",
-      error.message
+      error
     );
 
-    throw error;
+    throw new Error(
+      error.message || "Unable to send OTP"
+    );
   }
 };

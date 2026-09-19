@@ -110,12 +110,18 @@ export const eventCreate = async (req, res) => {
       event,
     });
   } catch (error) {
-    console.error("Event creation failed:", error);
+  console.error("========== EVENT CREATE ERROR ==========");
+  console.error("Full Error:", error);
+  console.error("Error Message:", error?.message);
+  console.error("Error Name:", error?.name);
+  console.error("Error Stack:", error?.stack);
+  console.error("========================================");
 
-    return res.status(500).json({
-      error: error.message,
-    });
-  }
+  return res.status(500).json({
+    success: false,
+    error: error?.message || "Event creation failed",
+  });
+}
 };
 
 export const GetallEvent = async (req, res) => {

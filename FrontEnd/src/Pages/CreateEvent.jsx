@@ -2,13 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const steps = [
-  "Basic Info",
-  "Details",
-  "Schedule",
-  "Tickets",
-  "Publish",
-];
+const steps = ["Basic Info", "Details", "Schedule", "Tickets", "Publish"];
 
 const initialForm = {
   title: "",
@@ -49,12 +43,11 @@ const CreateEvent = () => {
   const [form, setForm] = useState(initialForm);
   const [imageFile, setImageFile] = useState(null);
 
-  const API_URL =
-    import.meta.env.VITE_SERVER 
+  const API_URL = import.meta.env.VITE_SERVER;
 
   const progress = useMemo(
     () => ((currentStep + 1) / steps.length) * 100,
-    [currentStep]
+    [currentStep],
   );
 
   const updateField = (field, value) => {
@@ -95,7 +88,7 @@ const CreateEvent = () => {
     };
 
     const missingField = Object.entries(requiredFields).find(
-      ([field]) => !String(form[field] ?? "").trim()
+      ([field]) => !String(form[field] ?? "").trim(),
     );
 
     if (missingField) {
@@ -149,7 +142,7 @@ const CreateEvent = () => {
       console.log("Event API URL:", `${API_URL}/api/event-create`);
 
       const response = await axios.post(
-        `${API_URL}api/event-create`,
+        `${API_URL}/api/event-create`,
         payload,
         {
           headers: {
@@ -158,14 +151,12 @@ const CreateEvent = () => {
           timeout: 60000,
           onUploadProgress: (event) => {
             if (event.total) {
-              const percentage = Math.round(
-                (event.loaded / event.total) * 100
-              );
+              const percentage = Math.round((event.loaded / event.total) * 100);
 
               setUploadProgress(percentage);
             }
           },
-        }
+        },
       );
 
       console.log("Event publish response:", response.data);
@@ -177,10 +168,13 @@ const CreateEvent = () => {
         type: "success",
         message: "Event published successfully.",
       });
+      setTimeout(() => {
+        navigate("/profile/my-events");
+      }, 1000);
     } catch (error) {
       console.error(
         "Event publish failed:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
 
       if (error.response?.status === 401) {
@@ -212,9 +206,7 @@ const CreateEvent = () => {
   };
 
   const nextStep = () => {
-    setCurrentStep((step) =>
-      Math.min(step + 1, steps.length - 1)
-    );
+    setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
   };
 
   const prevStep = () => {
@@ -231,9 +223,7 @@ const CreateEvent = () => {
                 Event Title *
                 <input
                   value={form.title}
-                  onChange={(e) =>
-                    updateField("title", e.target.value)
-                  }
+                  onChange={(e) => updateField("title", e.target.value)}
                   placeholder="Summer Music Festival"
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
@@ -243,9 +233,7 @@ const CreateEvent = () => {
                 Category *
                 <select
                   value={form.category}
-                  onChange={(e) =>
-                    updateField("category", e.target.value)
-                  }
+                  onChange={(e) => updateField("category", e.target.value)}
                   className="mt-2 w-full rounded-lg border border-white/10 bg-[#10131d] px-3 py-3 text-white outline-none focus:border-violet-500"
                 >
                   <option>Music</option>
@@ -276,9 +264,7 @@ const CreateEvent = () => {
                 Host / Organizer Name *
                 <input
                   value={form.hostName}
-                  onChange={(e) =>
-                    updateField("hostName", e.target.value)
-                  }
+                  onChange={(e) => updateField("hostName", e.target.value)}
                   placeholder="EventX Studio"
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
@@ -288,9 +274,7 @@ const CreateEvent = () => {
                 Target Audience
                 <select
                   value={form.audience}
-                  onChange={(e) =>
-                    updateField("audience", e.target.value)
-                  }
+                  onChange={(e) => updateField("audience", e.target.value)}
                   className="mt-2 w-full rounded-lg border border-white/10 bg-[#10131d] px-3 py-3 text-white outline-none focus:border-violet-500"
                 >
                   <option>All</option>
@@ -312,9 +296,7 @@ const CreateEvent = () => {
                 Event Type
                 <select
                   value={form.eventType}
-                  onChange={(e) =>
-                    updateField("eventType", e.target.value)
-                  }
+                  onChange={(e) => updateField("eventType", e.target.value)}
                   className="mt-2 w-full rounded-lg border border-white/10 bg-[#10131d] px-3 py-3 text-white outline-none focus:border-violet-500"
                 >
                   <option>In-person</option>
@@ -329,10 +311,7 @@ const CreateEvent = () => {
                   type="number"
                   value={form.maxCapacity}
                   onChange={(e) =>
-                    updateField(
-                      "maxCapacity",
-                      Number(e.target.value) || 0
-                    )
+                    updateField("maxCapacity", Number(e.target.value) || 0)
                   }
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
@@ -343,9 +322,7 @@ const CreateEvent = () => {
               Tags
               <input
                 value={form.tags}
-                onChange={(e) =>
-                  updateField("tags", e.target.value)
-                }
+                onChange={(e) => updateField("tags", e.target.value)}
                 placeholder="music, festival, night, networking"
                 className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
               />
@@ -356,9 +333,7 @@ const CreateEvent = () => {
               <textarea
                 rows="3"
                 value={form.refundPolicy}
-                onChange={(e) =>
-                  updateField("refundPolicy", e.target.value)
-                }
+                onChange={(e) => updateField("refundPolicy", e.target.value)}
                 className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
               />
             </label>
@@ -373,9 +348,7 @@ const CreateEvent = () => {
                 Venue Name *
                 <input
                   value={form.venueName}
-                  onChange={(e) =>
-                    updateField("venueName", e.target.value)
-                  }
+                  onChange={(e) => updateField("venueName", e.target.value)}
                   placeholder="Worli Sea Face"
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
@@ -385,9 +358,7 @@ const CreateEvent = () => {
                 City *
                 <input
                   value={form.city}
-                  onChange={(e) =>
-                    updateField("city", e.target.value)
-                  }
+                  onChange={(e) => updateField("city", e.target.value)}
                   placeholder="Mumbai"
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
@@ -399,9 +370,7 @@ const CreateEvent = () => {
               <textarea
                 rows="3"
                 value={form.address}
-                onChange={(e) =>
-                  updateField("address", e.target.value)
-                }
+                onChange={(e) => updateField("address", e.target.value)}
                 placeholder="18, Marine Drive Road, Mumbai, India"
                 className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
               />
@@ -413,9 +382,7 @@ const CreateEvent = () => {
                 <input
                   type="date"
                   value={form.date}
-                  onChange={(e) =>
-                    updateField("date", e.target.value)
-                  }
+                  onChange={(e) => updateField("date", e.target.value)}
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
               </label>
@@ -425,9 +392,7 @@ const CreateEvent = () => {
                 <input
                   type="time"
                   value={form.time}
-                  onChange={(e) =>
-                    updateField("time", e.target.value)
-                  }
+                  onChange={(e) => updateField("time", e.target.value)}
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
               </label>
@@ -439,10 +404,7 @@ const CreateEvent = () => {
                   min="1"
                   value={form.duration}
                   onChange={(e) =>
-                    updateField(
-                      "duration",
-                      Number(e.target.value) || 0
-                    )
+                    updateField("duration", Number(e.target.value) || 0)
                   }
                   placeholder="2"
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
@@ -460,9 +422,7 @@ const CreateEvent = () => {
                 Ticket Type
                 <select
                   value={form.ticketType}
-                  onChange={(e) =>
-                    updateField("ticketType", e.target.value)
-                  }
+                  onChange={(e) => updateField("ticketType", e.target.value)}
                   className="mt-2 w-full rounded-lg border border-white/10 bg-[#10131d] px-3 py-3 text-white outline-none focus:border-violet-500"
                 >
                   <option>General</option>
@@ -478,10 +438,7 @@ const CreateEvent = () => {
                   type="number"
                   value={form.ticketPrice}
                   onChange={(e) =>
-                    updateField(
-                      "ticketPrice",
-                      Number(e.target.value) || 0
-                    )
+                    updateField("ticketPrice", Number(e.target.value) || 0)
                   }
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
@@ -495,10 +452,7 @@ const CreateEvent = () => {
                   type="number"
                   value={form.earlyBirdPrice}
                   onChange={(e) =>
-                    updateField(
-                      "earlyBirdPrice",
-                      Number(e.target.value) || 0
-                    )
+                    updateField("earlyBirdPrice", Number(e.target.value) || 0)
                   }
                   className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                 />
@@ -509,13 +463,9 @@ const CreateEvent = () => {
                 <div className="mt-2 flex h-[52px] items-center rounded-lg border border-white/10 bg-white/5 px-3">
                   <button
                     type="button"
-                    onClick={() =>
-                      updateField("featured", !form.featured)
-                    }
+                    onClick={() => updateField("featured", !form.featured)}
                     className={`relative h-6 w-11 rounded-full transition ${
-                      form.featured
-                        ? "bg-violet-600"
-                        : "bg-gray-700"
+                      form.featured ? "bg-violet-600" : "bg-gray-700"
                     }`}
                   >
                     <span
@@ -533,9 +483,7 @@ const CreateEvent = () => {
             </div>
 
             <div className="rounded-xl border border-dashed border-violet-500/40 bg-violet-500/5 p-4 text-sm text-gray-300">
-              <p className="font-medium text-violet-300">
-                Ticketing summary
-              </p>
+              <p className="font-medium text-violet-300">Ticketing summary</p>
 
               <div className="mt-3 flex items-center justify-between">
                 <span>General entry</span>
@@ -558,13 +506,10 @@ const CreateEvent = () => {
         return (
           <div className="space-y-5">
             <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-4 text-sm text-violet-100">
-              <p className="font-semibold text-white">
-                Ready to publish
-              </p>
+              <p className="font-semibold text-white">Ready to publish</p>
 
               <p className="mt-1">
-                Review your content and hit publish to make the event
-                live.
+                Review your content and hit publish to make the event live.
               </p>
             </div>
 
@@ -584,9 +529,7 @@ const CreateEvent = () => {
                   Or paste image URL
                   <input
                     value={form.imageUrl}
-                    onChange={(e) =>
-                      updateField("imageUrl", e.target.value)
-                    }
+                    onChange={(e) => updateField("imageUrl", e.target.value)}
                     placeholder="https://example.com/event-image.jpg"
                     className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-white outline-none focus:border-violet-500"
                   />
@@ -618,9 +561,7 @@ const CreateEvent = () => {
             </div>
 
             <div className="rounded-xl border border-white/10 bg-[#10131d] p-4">
-              <h4 className="font-semibold text-white">
-                Preview summary
-              </h4>
+              <h4 className="font-semibold text-white">Preview summary</h4>
 
               <div className="mt-3 flex flex-col gap-3 text-sm text-gray-300">
                 <div className="flex justify-between gap-3">
@@ -665,9 +606,7 @@ const CreateEvent = () => {
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold sm:text-3xl">
-              Create Event
-            </h2>
+            <h2 className="text-2xl font-bold sm:text-3xl">Create Event</h2>
 
             <p className="mt-1 text-sm text-gray-400">
               Set up your event from start to finish.
@@ -766,9 +705,7 @@ const CreateEvent = () => {
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                       Publishing
-                      {uploadProgress
-                        ? ` ${uploadProgress}%`
-                        : "..."}
+                      {uploadProgress ? ` ${uploadProgress}%` : "..."}
                     </span>
                   ) : currentStep === steps.length - 1 ? (
                     "Publish Event"
@@ -781,9 +718,7 @@ const CreateEvent = () => {
           </section>
 
           <aside className="rounded-xl border border-white/10 bg-[#10131d] p-5">
-            <h3 className="font-semibold text-white">
-              Event Preview
-            </h3>
+            <h3 className="font-semibold text-white">Event Preview</h3>
 
             <div className="mt-4 overflow-hidden rounded-xl border border-white/10">
               <img
@@ -802,8 +737,7 @@ const CreateEvent = () => {
                 </h3>
 
                 <p className="mt-2 text-xs text-gray-500">
-                  ⌖ {form.venueName || "Venue not set"},{" "}
-                  {form.city || "City"}
+                  ⌖ {form.venueName || "Venue not set"}, {form.city || "City"}
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500">
@@ -812,9 +746,7 @@ const CreateEvent = () => {
                 </p>
 
                 <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
-                  <span className="text-xs text-gray-400">
-                    Starting from
-                  </span>
+                  <span className="text-xs text-gray-400">Starting from</span>
 
                   <span className="text-lg font-bold text-violet-400">
                     ₹{form.ticketPrice || 0}
@@ -823,17 +755,13 @@ const CreateEvent = () => {
               </div>
             </div>
 
-            <h3 className="mt-6 font-semibold text-white">
-              Checklist
-            </h3>
+            <h3 className="mt-6 font-semibold text-white">Checklist</h3>
 
             {steps.map((item, index) => (
               <div key={item} className="mt-4 flex gap-3 text-sm">
                 <span
                   className={
-                    index <= currentStep
-                      ? "text-violet-400"
-                      : "text-gray-600"
+                    index <= currentStep ? "text-violet-400" : "text-gray-600"
                   }
                 >
                   ◉
@@ -846,8 +774,8 @@ const CreateEvent = () => {
                     {index === currentStep
                       ? "In progress"
                       : index < currentStep
-                      ? "Completed"
-                      : "Pending"}
+                        ? "Completed"
+                        : "Pending"}
                   </p>
                 </div>
               </div>
