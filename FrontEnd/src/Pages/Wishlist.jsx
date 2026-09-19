@@ -22,7 +22,7 @@ const Wishlist = () => {
 
   useEffect(() => {
     let isMounted = true;
-
+// done
     const fetchEvents = async () => {
       try {
         const response = await axios.get(`${API_URL}/api/events`);
